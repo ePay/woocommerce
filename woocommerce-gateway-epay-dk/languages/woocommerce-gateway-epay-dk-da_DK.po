@@ -1,0 +1,186 @@
+# Copyright (C) 2014 WooCommerce ePay Payment Solutions Gateway
+# This file is distributed under the same license as the WooCommerce ePay Payment Solutions Gateway package.
+msgid ""
+msgstr ""
+"Project-Id-Version: WooCommerce ePay Payment Solutions Gateway 2.1\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/woocommerce-gateway-epay-dk\n"
+"POT-Creation-Date: 2014-02-17 12:19:37+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2014-02-17 13:22+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"X-Generator: Poedit 1.5.7\n"
+
+#: woocommerce-gateway-epay-dk.php:78
+msgid "Enable/Disable"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:80
+msgid "Enable ePay"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:84
+msgid "Title"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:86
+msgid "This controls the title which the user sees during checkout."
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:87 woocommerce-gateway-epay-dk.php:356
+msgid "ePay Payment Solutions"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:90
+msgid "Description"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:92
+msgid "This controls the description which the user sees during checkout."
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:93
+msgid "Pay using ePay Payment Solutions"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:96
+msgid "Merchant number"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:101
+msgid "Window ID"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:106
+msgid "Window state"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:109
+msgid "How to open the ePay Payment Window"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:113
+msgid "MD5 Key"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:115
+msgid "Your md5 key"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:118
+msgid "Instant capture"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:120
+msgid "Enable instant capture"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:124
+msgid "Group"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:128
+msgid "Auth Mail"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:132
+msgid "Own receipt"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:134
+msgid "Enable own receipt"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:138
+msgid "Remote interface"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:140
+msgid "Use remote interface"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:144 woocommerce-gateway-epay-dk.php:146
+msgid "Remote password"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:164
+msgid ""
+"<a href=\"http://woocommerce.wpguiden.dk/en/configuration#709\" target="
+"\"_blank\">Documentation can be found here</a>"
+msgstr ""
+"<a href=\"http://woocommerce.wpguiden.dk/en/configuration#709\" target="
+"\"_blank\">Dokumentation findes her</a>"
+
+#: woocommerce-gateway-epay-dk.php:213
+msgctxt "hash before order number"
+msgid "#"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:250
+msgid "Pay via ePay"
+msgstr "Betal med ePay"
+
+#: woocommerce-gateway-epay-dk.php:251
+msgid "Cancel order &amp; restore cart"
+msgstr "Annullér order"
+
+#: woocommerce-gateway-epay-dk.php:300
+msgid ""
+"Thank you for your order, please click the button below to pay with ePay."
+msgstr "Tak, for din order. Klik på knappen herunder for at betale med ePay."
+
+#: woocommerce-gateway-epay-dk.php:342
+msgid "Callback completed"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:455
+msgid "Transaction ID"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:458
+msgid "Authorized amount"
+msgstr "Autoriseret beløb"
+
+#: woocommerce-gateway-epay-dk.php:461
+msgid "Captured amount"
+msgstr "Hævet beløb"
+
+#: woocommerce-gateway-epay-dk.php:464
+msgid "Credited amount"
+msgstr "Krediteret beløb"
+
+#: woocommerce-gateway-epay-dk.php:475
+msgid "Capture"
+msgstr "Hæv"
+
+#: woocommerce-gateway-epay-dk.php:481
+msgid "Delete"
+msgstr "Slet"
+
+#: woocommerce-gateway-epay-dk.php:492
+msgid "Credit"
+msgstr "Kreditér"
+
+#. Plugin Name of the plugin/theme
+msgid "WooCommerce ePay Payment Solutions Gateway"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://www.epay.dk"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid ""
+"A payment gateway for ePay payment solutions standard (http://www.epay.dk/"
+"epay-payment-solutions/)."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "ePay - Michael Korsgaard"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://www.epay.dk/epay-payment-solutions/"
+msgstr ""
