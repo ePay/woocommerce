@@ -31,7 +31,7 @@ function add_wc_epay_dk_gateway()
 			$this->icon = WP_PLUGIN_URL . "/" . plugin_basename(dirname(__FILE__ )) . '/ePay-logo.png';
 			$this->has_fields = false;
 
-			$this->supports = array( 'subscriptions', 'products', 'subscription_cancellation', 'subscription_reactivation', 'subscription_suspension' , 'subscription_amount_changes', 'subscription_date_changes');
+			$this->supports = array('subscriptions', 'products', 'subscription_cancellation', 'subscription_reactivation', 'subscription_suspension', 'subscription_amount_changes', 'subscription_date_changes');
 			
 			// Load the form fields.
 			$this->init_form_fields();
@@ -67,8 +67,6 @@ function add_wc_epay_dk_gateway()
 			add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));			
 			add_action('scheduled_subscription_payment_epay_dk', array($this, 'scheduled_subscription_payment'), 10, 3);		
 			add_action('woocommerce_receipt_epay_dk', array($this, 'receipt_page'));
-			
-			
 		}
 	    
 	  	/**
