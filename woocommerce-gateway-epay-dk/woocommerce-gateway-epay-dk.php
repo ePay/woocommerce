@@ -301,7 +301,6 @@ function add_wc_epay_dk_gateway()
 			}
 		}
 
-
 		/**
          * receipt_page
          **/
@@ -505,7 +504,7 @@ function add_wc_epay_dk_gateway()
                             echo '<p>';
                             echo get_option('woocommerce_currency') . ' <span><input type="text" value="' . number_format(($transaction->transactionInformation->capturedamount) / 100, 2, ".", "") . '" id="epay_credit_amount" name="epay_credit_amount" /></span>';
                             echo '</p>';
-                            echo '<a class="button" onclick="javascript:location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=credit') . '&amount=\' + document.getElementById(\'epay_credit_amount\').value">';
+                            echo '<a class="button" onclick="javascript: (confirm(\'' . __('Are you sure you want to credit?', 'woocommerce-gateway-epay-dk') . '\') ? (location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=credit') . '&amount=\' + document.getElementById(\'epay_credit_amount\').value) : (false));">';
                             echo _e('Credit', 'woocommerce-gateway-epay-dk');
                             echo '</a>';
                             echo '</li>';
