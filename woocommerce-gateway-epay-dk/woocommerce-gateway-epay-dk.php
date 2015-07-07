@@ -7,7 +7,7 @@ Version: 2.1
 Author: ePay - Michael Korsgaard
 Author URI: http://www.epay.dk/epay-payment-solutions/
 Text Domain: epay
-*/
+ */
 
 add_action('plugins_loaded', 'add_wc_epay_dk_gateway', 0);
 
@@ -18,8 +18,8 @@ function add_wc_epay_dk_gateway()
 	define('epay_LIB', dirname(__FILE__) . '/lib/');
 
 	/**
- 	* Gateway class
- 	**/
+     * Gateway class
+     **/
 	class WC_Gateway_EPayDk extends WC_Payment_Gateway
 	{	
 		public function __construct()
@@ -69,9 +69,9 @@ function add_wc_epay_dk_gateway()
 			add_action('woocommerce_receipt_epay_dk', array($this, 'receipt_page'));
 		}
 	    
-	  	/**
-	     * Initialise Gateway Settings Form Fields
-	     */
+        /**
+         * Initialise Gateway Settings Form Fields
+         */
 	    function init_form_fields()
 		{			
 	    	$this->form_fields = array(
@@ -147,15 +147,15 @@ function add_wc_epay_dk_gateway()
 								'label' => __( 'Remote password', 'woocommerce-gateway-epay-dk')
 							)			
 				);
-	    
+            
 	    } // End init_form_fields()
 	    
 		/**
-		 * Admin Panel Options 
-		 * - Options for bits like 'title' and availability on a country-by-country basis
-		 *
-		 * @since 1.0.0
-		 */
+         * Admin Panel Options 
+         * - Options for bits like 'title' and availability on a country-by-country basis
+         *
+         * @since 1.0.0
+         */
 		public function admin_options()
 		{
 			$plugin_data = get_plugin_data(__FILE__, false, false);
@@ -164,20 +164,28 @@ function add_wc_epay_dk_gateway()
 			echo '<h3>' . 'ePay Payment Solutions' . ' v' . $version . '</h3>';
 			echo __('<a href="http://woocommerce.wpguiden.dk/en/configuration#709" target="_blank">Documentation can be found here</a>', 'woocommerce-gateway-epay-dk');
 			echo '<table class="form-table">';
-				// Generate the HTML For the settings form.
-				$this->generate_settings_html();
+            // Generate the HTML For the settings form.
+            $this->generate_settings_html();
 			echo '</table>';
 		}
 	    
 	    /**
-		 * There are no payment fields for epay, but we want to show the description if set.
-		 **/
+         * There are no payment fields for epay, but we want to show the description if set.
+         **/
 		function payment_fields()
 		{
 			if($this->description)
 				echo wpautop(wptexturize($this->description));
 		}
 	    
+		function fix_url($url)
+		{
+			$url = str_replace('&#038;', '&amp;', $url);
+			$url = str_replace('&', '&amp;', $url);
+			
+			return $url;
+		}
+		
 		function yesnotoint($str)
 		{
 			switch($str)
@@ -192,8 +200,8 @@ function add_wc_epay_dk_gateway()
 		}
 		
 		/**
-		 * Generate the epay button link
-		 **/
+         * Generate the epay button link
+         **/
 	    public function generate_epay_form($order_id)
 		{
 			global $woocommerce;
@@ -213,10 +221,10 @@ function add_wc_epay_dk_gateway()
 				'amount' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order ) ? (WC_Subscriptions_Order::get_total_initial_payment($order)*100) : ($order->order_total * 100)) : ($order->order_total * 100),
 				'orderid' => str_replace(_x( '#', 'hash before order number', 'woocommerce'), "", $order->get_order_number()),
 				'currency' => get_woocommerce_currency(),
-				'callbackurl' => add_query_arg ('wooorderid', $order_id, add_query_arg ('wc-api', 'WC_Gateway_EPayDk', $this->get_return_url( $order ))),
-				'accepturl' => $this->get_return_url($order),
-				'cancelurl' => $order->get_cancel_order_url(),
-				'language' => 0,
+				'callbackurl' => $this->fix_url(add_query_arg ('wooorderid', $order_id, add_query_arg ('wc-api', 'WC_Gateway_EPayDk', $this->get_return_url( $order )))),
+				'accepturl' => $this->fix_url($this->get_return_url($order)),
+				'cancelurl' => $this->fix_url($order->get_cancel_order_url()),
+				'language' => $this->get_language_code(get_locale()),
 				'subscription' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order)) ? 1 : 0 : 0
 			);
 			
@@ -253,8 +261,8 @@ function add_wc_epay_dk_gateway()
 		}
 		
 		/**
-		 * Process the payment and return the result
-		 **/
+         * Process the payment and return the result
+         **/
 		function process_payment($order_id)
 		{
 			$order = new WC_Order($order_id);
@@ -295,8 +303,8 @@ function add_wc_epay_dk_gateway()
 
 
 		/**
-		 * receipt_page
-		 **/
+         * receipt_page
+         **/
 		function receipt_page( $order )
 		{
 			echo '<p>' . __('Thank you for your order, please click the button below to pay with ePay.', 'woocommerce-gateway-epay-dk') . '</p>';
@@ -304,8 +312,8 @@ function add_wc_epay_dk_gateway()
 		}
 		
 		/**
-		 * Check for epay IPN Response
-		 **/
+         * Check for epay IPN Response
+         **/
 		function check_callback()
 		{
 			$_GET = stripslashes_deep($_GET);
@@ -313,8 +321,8 @@ function add_wc_epay_dk_gateway()
 		}
 		
 		/**
-		 * Successful Payment!
-		 **/
+         * Successful Payment!
+         **/
 		function successful_request( $posted )
 		{
 			$order = new WC_Order((int)$posted["wooorderid"]);
@@ -338,7 +346,7 @@ function add_wc_epay_dk_gateway()
 					exit;
 				}
 			}
-				
+            
 			if($order->status !== 'completed')
 			{
 				// Payment completed
@@ -400,7 +408,7 @@ function add_wc_epay_dk_gateway()
 							}
 							
 							break;
-							
+                        
 						case 'credit':
 							$webservice = new epaysoap($this->remotepassword);
 							$credit = $webservice->credit($this->merchant, $transactionId, $_GET["amount"] * 100);
@@ -416,7 +424,7 @@ function add_wc_epay_dk_gateway()
 							}
 							
 							break;
-							
+                        
 						case 'delete':
 							$webservice = new epaysoap($this->remotepassword);
 							$delete = $webservice->delete($this->merchant, $transactionId);
@@ -476,14 +484,14 @@ function add_wc_epay_dk_gateway()
 						if($transaction->transactionInformation->status == "PAYMENT_NEW")
 						{
 							echo '<ul>';
-								echo '<li>';
-									echo '<p>';
-										echo get_option('woocommerce_currency') . ' <span><input type="text" value="' . number_format(($transaction->transactionInformation->authamount - $transaction->transactionInformation->capturedamount) / 100, 2, ".", "") . '" id="epay_amount" name="epay_amount" /></span>';
-									echo '</p>';
-									echo '<a class="button" onclick="javascript:location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=capture') . '&amount=\' + document.getElementById(\'epay_amount\').value">';
-										echo _e('Capture', 'woocommerce-gateway-epay-dk');
-									echo '</a>';
-								echo '</li>';
+                            echo '<li>';
+                            echo '<p>';
+                            echo get_option('woocommerce_currency') . ' <span><input type="text" value="' . number_format(($transaction->transactionInformation->authamount - $transaction->transactionInformation->capturedamount) / 100, 2, ".", "") . '" id="epay_amount" name="epay_amount" /></span>';
+                            echo '</p>';
+                            echo '<a class="button" onclick="javascript:location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=capture') . '&amount=\' + document.getElementById(\'epay_amount\').value">';
+                            echo _e('Capture', 'woocommerce-gateway-epay-dk');
+                            echo '</a>';
+                            echo '</li>';
 							echo '</ul><br />';
 							
 							echo '<a class="button" href="' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=delete') . '">';
@@ -493,14 +501,14 @@ function add_wc_epay_dk_gateway()
 						elseif($transaction->transactionInformation->status == "PAYMENT_CAPTURED" && $transaction->transactionInformation->creditedamount == 0)
 						{
 							echo '<ul>';
-								echo '<li>';
-									echo '<p>';
-										echo get_option('woocommerce_currency') . ' <span><input type="text" value="' . number_format(($transaction->transactionInformation->capturedamount) / 100, 2, ".", "") . '" id="epay_credit_amount" name="epay_credit_amount" /></span>';
-									echo '</p>';
-									echo '<a class="button" onclick="javascript:location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=credit') . '&amount=\' + document.getElementById(\'epay_credit_amount\').value">';
-										echo _e('Credit', 'woocommerce-gateway-epay-dk');
-									echo '</a>';
-								echo '</li>';
+                            echo '<li>';
+                            echo '<p>';
+                            echo get_option('woocommerce_currency') . ' <span><input type="text" value="' . number_format(($transaction->transactionInformation->capturedamount) / 100, 2, ".", "") . '" id="epay_credit_amount" name="epay_credit_amount" /></span>';
+                            echo '</p>';
+                            echo '<a class="button" onclick="javascript:location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=credit') . '&amount=\' + document.getElementById(\'epay_credit_amount\').value">';
+                            echo _e('Credit', 'woocommerce-gateway-epay-dk');
+                            echo '</a>';
+                            echo '</li>';
 							echo '</ul><br />';
 						}
 						
@@ -544,6 +552,33 @@ function add_wc_epay_dk_gateway()
 			</div>';
 		}
 		
+        private function get_language_code($locale)
+        {
+            switch($locale)
+            {
+                case "da_DK":
+                    return "1";
+                case "de_CH":
+                    return "7";
+                case "de_DE":
+                    return "7";
+                case "en_AU":
+                    return "2";
+                case "en_GB":
+                    return "2";
+                case "en_NZ":
+                    return "2";
+                case "en_US":
+                    return "2";
+                case "sv_SE":
+                    return "3";
+                case "nn_NO":
+                    return "4";
+            }
+            
+            return "0";
+        }
+        
 		private function get_iso_code($code)
 		{
 			switch(strtoupper($code))
@@ -1071,8 +1106,8 @@ function add_wc_epay_dk_gateway()
 	}
 
 	/**
- 	* Add the Gateway to WooCommerce
- 	**/
+     * Add the Gateway to WooCommerce
+     **/
 	function add_epay_dk_gateway($methods) 
 	{
 		$methods[] = 'WC_Gateway_EPayDk';
