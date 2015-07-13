@@ -138,6 +138,12 @@ function add_wc_epay_dk_gateway()
 								'label' => __( 'Enable own receipt', 'woocommerce-gateway-epay-dk'), 
 								'default' => 'no'
 							), 
+                'addfeetoorder' => array(
+								'title' => __( 'Add fee to order', 'woocommerce-gateway-epay-dk'), 
+								'type' => 'checkbox', 
+								'label' => __( 'Add transaction fee to the order', 'woocommerce-gateway-epay-dk'), 
+								'default' => 'no'
+							), 
 				'enableinvoice' => array(
 								'title' => __( 'Invoice data', 'woocommerce-gateway-epay-dk'), 
 								'type' => 'checkbox', 
@@ -450,10 +456,25 @@ function add_wc_epay_dk_gateway()
 				}
 			}
             
-			if($order->status !== 'completed')
+			if($order->has_status('pending'))
 			{
 				// Payment completed
 				$order->add_order_note(__('Callback completed', 'woocommerce-gateway-epay-dk'));
+                
+                if($this->settings["addfeetoorder"] == "yes")
+                {
+                    $order_fee              = new stdClass();
+                    $order_fee->id          = 'epay_fee';
+                    $order_fee->name        = __('Fee', 'woocommerce-gateway-epay-dk');
+                    $order_fee->amount      = isset( $posted['txnfee'] ) ? floatval( $posted['txnfee'] / 100) : 0;
+                    $order_fee->taxable     = false;
+                    $order_fee->tax         = 0;
+                    $order_fee->tax_data    = array();
+                    
+                    $order->add_fee($order_fee);
+                    $order->set_total($order->order_total + floatval($posted['txnfee'] / 100));
+                }
+                
 				$order->payment_complete();
 				
 				update_post_meta((int)$posted["wooorderid"], 'Transaction ID', $posted["txnid"]);
