@@ -38,6 +38,9 @@ function add_wc_epay_dk_gateway()
 			
 			// Load the settings.
 			$this->init_settings();
+            
+            if($this->settings["remoteinterface"] == "yes")
+                $this->supports = array_merge($this->supports, array('refunds'));
 			
 			// Define user set variables
 			$this->enabled = $this->settings["enabled"];
@@ -135,6 +138,12 @@ function add_wc_epay_dk_gateway()
 								'label' => __( 'Enable own receipt', 'woocommerce-gateway-epay-dk'), 
 								'default' => 'no'
 							), 
+				'enableinvoice' => array(
+								'title' => __( 'Invoice data', 'woocommerce-gateway-epay-dk'), 
+								'type' => 'checkbox', 
+								'label' => __( 'Enable invoice data', 'woocommerce-gateway-epay-dk'), 
+								'default' => 'no'
+							), 
 				'remoteinterface' => array(
 								'title' => __( 'Remote interface', 'woocommerce-gateway-epay-dk'), 
 								'type' => 'checkbox', 
@@ -227,7 +236,69 @@ function add_wc_epay_dk_gateway()
 				'language' => $this->get_language_code(get_locale()),
 				'subscription' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order)) ? 1 : 0 : 0
 			);
-			
+            
+            if($this->settings["enableinvoice"] == "yes")
+            {
+                $invoice = array();  
+                
+                $invoice["customer"] = array(
+                    "emailaddress" => $order->billing_email,
+                    "firstname" => $this->jsonValueRemoveSpecialCharacters($order->billing_first_name),
+                    "lastname" => $this->jsonValueRemoveSpecialCharacters($order->billing_last_name),
+                    "address" => $this->jsonValueRemoveSpecialCharacters($order->billing_address_1 . ($order->billing_address_2 != null) ? ' ' . $order->billing_address_2 : ''),
+                    "zip" => $order->billing_postcode,
+                    "city" => $order->billing_city,
+                    "country" => $order->billing_country
+                );
+                
+                $invoice["shippingaddress"] = array(
+                    "firstname" => $this->jsonValueRemoveSpecialCharacters($order->shipping_first_name),
+                    "lastname" => $this->jsonValueRemoveSpecialCharacters($order->shipping_last_name),
+                    "address" => $this->jsonValueRemoveSpecialCharacters($order->shipping_address_1 . ($order->shipping_address_2 != null) ? ' ' . $order->shipping_address_2 : ''),
+                    "zip" => $order->shipping_postcode,
+                    "city" => $order->shipping_city,
+                    "country" => $order->shipping_country
+                );
+                
+                $items = $order->get_items();           
+                foreach($items as $item)
+                {                                
+                    $invoice["lines"][] = array(
+                        "id" => $item["product_id"], 
+                        "description" => $this->jsonValueRemoveSpecialCharacters($item["name"]), 
+                        "quantity" => $item["qty"], 
+                        "price" => round($item["line_subtotal"] / $item["qty"] * 100), 
+                        "vat" => round($item["line_subtotal_tax"] / $item["line_subtotal"] * 100)
+                    );
+                }
+                
+                $discount = $order->get_total_discount();
+                if($discount > 0)
+                {
+                    $invoice["lines"][] = array(
+                        "id" => "discount", 
+                        "description" => "discount", 
+                        "quantity" => 1, 
+                        "price" => -round($discount * 100), 
+                        "vat" => round($order->get_total_tax() / ($order->get_total() - $order->get_total_tax())  * 100)
+                    );
+                }
+                
+                $shipping = $order->get_total_shipping();
+                if($shipping > 0)
+                {
+                    $invoice["lines"][] = array(
+                        "id" => "shipping", 
+                        "description" => "shipping", 
+                        "quantity" => 1, 
+                        "price" => round($shipping * 100), 
+                        "vat" => round($order->get_shipping_tax() / $shipping * 100)
+                    ); 
+                }
+                
+                $epay_args['invoice'] = $this->jsonRemoveUnicodeSequences($invoice);
+            }
+            
 			if(strlen($this->md5key) > 0)
 			{
 				$hash = "";
@@ -244,7 +315,7 @@ function add_wc_epay_dk_gateway()
 			
 			foreach ($epay_args as $key => $value)
 			{
-				$epay_args_array[] = '\'' . esc_attr($key) . '\': "' . $value . '"';
+				$epay_args_array[] = '\'' . esc_attr($key) . '\': \'' . $value . '\'';
 			}
 			
 			return '<script type="text/javascript">
@@ -259,6 +330,16 @@ function add_wc_epay_dk_gateway()
 			<a class="button" onclick="javascript: paymentwindow.open();" id="submit_epay_payment_form" />' . __('Pay via ePay', 'woocommerce-gateway-epay-dk') . '</a>
 			<a class="button cancel" href="' . esc_url($order->get_cancel_order_url()) . '">' . __('Cancel order &amp; restore cart', 'woocommerce-gateway-epay-dk') . '</a>';
 		}
+        
+        private function jsonValueRemoveSpecialCharacters($value)
+        {
+            return preg_replace('/[^\p{Latin}\d ]/u', '', $value);
+        }
+        
+        private function jsonRemoveUnicodeSequences($struct)
+        {
+            return preg_replace("/\\\\u([a-f0-9]{4})/e", "iconv('UCS-4LE','UTF-8',pack('V', hexdec('U$1')))", json_encode($struct));
+        }
 		
 		/**
          * Process the payment and return the result
@@ -272,6 +353,29 @@ function add_wc_epay_dk_gateway()
 				'redirect'	=> $order->get_checkout_payment_url( true )
 			);
 		}
+        
+        function process_refund($order_id, $amount = null, $reason = '')
+        {
+            require_once (epay_LIB . 'class.epaysoap.php');
+
+            $order = new WC_Order($order_id);
+            $transactionId = get_post_meta($order->id, 'Transaction ID', true);
+            
+            $webservice = new epaysoap($this->remotepassword);
+            $credit = $webservice->credit($this->merchant, $transactionId, $amount * 100);
+            if(!is_wp_error($credit))
+            {
+                if($credit)
+                    return true;
+            }
+            else
+            {
+                foreach($credit->get_error_messages() as $error)
+                    $reason .= $error->get_error_message();
+            }
+            
+            return false;
+        }
 		
 		function scheduled_subscription_payment($amount_to_charge, $order, $product_id)
 		{
@@ -282,7 +386,7 @@ function add_wc_epay_dk_gateway()
 				$subscriptionid = get_post_meta($order->id, 'Subscription ID', true);
 				
 				$webservice = new epaysoap($this->remotepassword, true);
-				$authorize = $webservice->authorize($this->merchant, $subscriptionid, date("d-m-Y") . $order->id, $amount_to_charge * 100, $this->get_iso_code(get_option('woocommerce_currency')), (bool)$this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
+				$authorize = $webservice->authorize($this->merchant, $subscriptionid, date("dmY") . $order->id, $amount_to_charge * 100, $this->get_iso_code(get_woocommerce_currency()), (bool)$this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
 				
 				if(!is_wp_error($authorize))
 				{
