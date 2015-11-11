@@ -3,7 +3,7 @@
 Plugin Name: WooCommerce ePay Payment Solutions Gateway
 Plugin URI: http://www.epay.dk
 Description: A payment gateway for ePay payment solutions standard (http://www.epay.dk/epay-payment-solutions/).
-Version: 2.2
+Version: 2.3
 Author: ePay - Michael Korsgaard
 Author URI: http://www.epay.dk/epay-payment-solutions/
 Text Domain: epay
