@@ -196,7 +196,7 @@ function add_wc_epay_dk_gateway()
 		function fix_url($url)
 		{
 			$url = str_replace('&#038;', '&amp;', $url);
-			$url = str_replace('&', '&amp;', $url);
+			$url = str_replace('&amp;', '&', $url);
 			
 			return $url;
 		}
@@ -596,13 +596,13 @@ function add_wc_epay_dk_gateway()
 						echo '<strong>' . _e('Transaction ID', 'woocommerce-gateway-epay-dk') . ':</strong> ' . $transaction->transactionInformation->transactionid;
 						echo '</p>';
 						echo '<p>';
-						echo '<strong>' . _e('Authorized amount', 'woocommerce-gateway-epay-dk') . ':</strong> ' . get_option('woocommerce_currency') . ' ' . number_format($transaction->transactionInformation->authamount / 100, 2, ".", "");
+						echo '<strong>' . _e('Authorized amount', 'woocommerce-gateway-epay-dk') . ':</strong> ' . $order->get_order_currency() . ' ' . number_format($transaction->transactionInformation->authamount / 100, 2, ".", "");
 						echo '</p>';
 						echo '<p>';
-						echo '<strong>' . _e('Captured amount', 'woocommerce-gateway-epay-dk') . ':</strong> ' . get_option('woocommerce_currency') . ' ' . number_format($transaction->transactionInformation->capturedamount / 100, 2, ".", "");
+						echo '<strong>' . _e('Captured amount', 'woocommerce-gateway-epay-dk') . ':</strong> ' . $order->get_order_currency() . ' ' . number_format($transaction->transactionInformation->capturedamount / 100, 2, ".", "");
 						echo '</p>';
 						echo '<p>';
-						echo '<strong>' . _e('Credited amount', 'woocommerce-gateway-epay-dk') . ':</strong> ' . get_option('woocommerce_currency') . ' ' . number_format($transaction->transactionInformation->creditedamount / 100, 2, ".", "");
+						echo '<strong>' . _e('Credited amount', 'woocommerce-gateway-epay-dk') . ':</strong> ' . $order->get_order_currency() . ' ' . number_format($transaction->transactionInformation->creditedamount / 100, 2, ".", "");
 						echo '</p>';
 						
 						if($transaction->transactionInformation->status == "PAYMENT_NEW")
@@ -610,7 +610,7 @@ function add_wc_epay_dk_gateway()
 							echo '<ul>';
                             echo '<li>';
                             echo '<p>';
-                            echo get_option('woocommerce_currency') . ' <span><input type="text" value="' . number_format(($transaction->transactionInformation->authamount - $transaction->transactionInformation->capturedamount) / 100, 2, ".", "") . '" id="epay_amount" name="epay_amount" /></span>';
+                            echo $order->get_order_currency() . ' <span><input type="text" value="' . number_format(($transaction->transactionInformation->authamount - $transaction->transactionInformation->capturedamount) / 100, 2, ".", "") . '" id="epay_amount" name="epay_amount" /></span>';
                             echo '</p>';
                             echo '<a class="button" onclick="javascript:location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=capture') . '&amount=\' + document.getElementById(\'epay_amount\').value">';
                             echo _e('Capture', 'woocommerce-gateway-epay-dk');
@@ -627,7 +627,7 @@ function add_wc_epay_dk_gateway()
 							echo '<ul>';
                             echo '<li>';
                             echo '<p>';
-                            echo get_option('woocommerce_currency') . ' <span><input type="text" value="' . number_format(($transaction->transactionInformation->capturedamount) / 100, 2, ".", "") . '" id="epay_credit_amount" name="epay_credit_amount" /></span>';
+                            echo $order->get_order_currency() . ' <span><input type="text" value="' . number_format(($transaction->transactionInformation->capturedamount) / 100, 2, ".", "") . '" id="epay_credit_amount" name="epay_credit_amount" /></span>';
                             echo '</p>';
                             echo '<a class="button" onclick="javascript: (confirm(\'' . __('Are you sure you want to credit?', 'woocommerce-gateway-epay-dk') . '\') ? (location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=credit') . '&amount=\' + document.getElementById(\'epay_credit_amount\').value) : (false));">';
                             echo _e('Credit', 'woocommerce-gateway-epay-dk');
