@@ -435,29 +435,32 @@ function add_wc_epay_dk_gateway()
 		function successful_request( $posted )
 		{
 			$order = new WC_Order((int)$posted["wooorderid"]);
-			$var = "";
-			
-			if(strlen($this->md5key) > 0)
-			{
-				foreach($posted as $key => $value)
-				{
-					if($key != "hash")
-						$var .= $value;
-				}
-				
-				$genstamp = md5($var . $this->md5key);
-				
-				if($genstamp != $posted["hash"])
-				{
-					echo "MD5 error";
-					error_log('MD5 check failed for ePay callback with order_id:' . $posted["wooorderid"]);
-					status_header(500);
-					exit;
-				}
-			}
-            
+			            
 			if($order->has_status('pending'))
 			{
+                //Check for MD5 validity
+                $var = "";
+                
+                if(strlen($this->md5key) > 0)
+                {
+                    foreach($posted as $key => $value)
+                    {
+                        if($key != "hash")
+                            $var .= $value;
+                    }
+                    
+                    $genstamp = md5($var . $this->md5key);
+                    
+                    if($genstamp != $posted["hash"])
+                    {
+                        echo "MD5 error";
+                        error_log('MD5 check failed for ePay callback with order_id:' . $posted["wooorderid"]);
+                        status_header(500);
+                        exit;
+                    }
+                }
+
+
 				// Payment completed
 				$order->add_order_note(__('Callback completed', 'woocommerce-gateway-epay-dk'));
                 
