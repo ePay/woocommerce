@@ -456,7 +456,7 @@ function add_wc_epay_dk_gateway()
                         echo "MD5 error";
                         error_log('MD5 check failed for ePay callback with order_id:' . $posted["wooorderid"]);
                         status_header(500);
-                        exit;
+                        return;
                     }
                 }
 
