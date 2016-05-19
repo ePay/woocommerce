@@ -58,8 +58,12 @@ function add_wc_epay_dk_gateway()
 			$this->remotepassword = $this->settings["remotepassword"];
 			
 			// Actions
-			add_action('init', array(& $this, 'check_callback', ));
-			add_action('valid-epay-callback', array(&$this, 'successful_request', ));
+			
+			// This fixes compatibility issues with WooCommerce Multilingual and WP 4.5.1 rewrite rules.
+			if(stristr($_SERVER['REQUEST_URI'], 'WC_Gateway_EPayDk')) {
+				add_action('init', array(&$this, 'check_callback'));
+				add_action('valid-epay-callback', array(&$this, 'successful_request'));
+			}
 			
 			if($this->settings["remoteinterface"] == "yes")
 				add_action('add_meta_boxes', array( &$this, 'epay_meta_boxes' ), 10, 0);
