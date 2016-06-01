@@ -208,8 +208,9 @@ function add_wc_epay_dk_gateway()
 		/**
 		 * Get default tracking id from google-analytics-for-wordpress plugin from MonsterInsights, previously Yoast
 		 */
-		private function get_default_google_tracker_id() {
-			if( class_exists('Yoast_GA_Options') ) {
+		private function get_default_google_tracker_id()
+		{
+			if (class_exists('Yoast_GA_Options')) {
 				$yoast_options = Yoast_GA_Options::instance();
 				return $yoast_options->get_tracking_code();
 			}
@@ -391,6 +392,8 @@ function add_wc_epay_dk_gateway()
 
 				$epay_args['invoice'] = $this->jsonRemoveUnicodeSequences($invoice);
 			}
+
+			$epay_args = apply_filters('epay_woocommerce_generate_form_args', $epay_args);
 
 			if (strlen($this->md5key) > 0) {
 				$hash = "";
