@@ -170,6 +170,36 @@ function add_wc_epay_dk_gateway()
 					'title' => __('Remote password', 'woocommerce-gateway-epay-dk'),
 					'type' => 'text',
 					'label' => __('Remote password', 'woocommerce-gateway-epay-dk')
+				),
+				'cssurl' => array(
+					'title' => __('Custom css', 'woocommerce-gateway-epay-dk'),
+					'type' => 'text',
+					'label' => __('Url to custom css file', 'woocommerce-gateway-epay-dk'),
+					'default' => 'http://'
+				),
+				'mobilecssurl' => array(
+					'title' => __('Custom mobile css', 'woocommerce-gateway-epay-dk'),
+					'type' => 'text',
+					'label' => __('Url to custom css file for mobile', 'woocommerce-gateway-epay-dk'),
+					'default' => 'http://'
+				),
+				'backgroundcolor' => array(
+					'title' => __('Background color', 'woocommerce-gateway-epay-dk'),
+					'type' => 'color',
+					'label' => __('Background color for payment window', 'woocommerce-gateway-epay-dk'),
+					'default' => '#ffffff',
+				),
+				'opacity' => array(
+					'title' => __('Opacity', 'woocommerce-gateway-epay-dk'),
+					'type' => 'number',
+					'label' => __('Affect background color when windowstate is set to 1, enter a value between 0 to 100', 'woocommerce-gateway-epay-dk'),
+					'default' => '0'
+				),
+				'googletracker' => array(
+					'title' => __('Google tracker', 'woocommerce-gateway-epay-dk'),
+					'type' => 'text',
+					'label' => __('Enter id (UA-XXXXX-X) and configure "cross domain auto linking" in Google Analytics', 'woocommerce-gateway-epay-dk'),
+					'default' => $this->get_default_google_tracker_id()
 				)
 			);
 
@@ -224,6 +254,25 @@ function add_wc_epay_dk_gateway()
 			}
 		}
 
+
+		private function is_analytics($str)
+		{
+			// borrowed from https://gist.github.com/faisalman/924970
+			return preg_match('/^ua-\d{4,9}-\d{1,4}$/i', strval($str)) ? true : false;
+		}
+
+		private function is_hex_color($str)
+		{
+			// borrowed from http://stackoverflow.com/questions/12837942/regex-for-matching-css-hex-colors
+			return preg_match('/^#([a-fA-F0-9]{3}){1,2}\b/', strval($str)) ? true : false;
+		}
+
+		protected function is_url($str)
+		{
+			// borrowed from http://code.tutsplus.com/tutorials/8-regular-expressions-you-should-know--net-6149
+			return preg_match('/^http(s)?:\/\/([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i', strval($str)) ? true : false;
+		}
+
 		/**
 		 * Generate the epay button link
 		 **/
@@ -244,7 +293,7 @@ function add_wc_epay_dk_gateway()
 				'mailreceipt' => $this->authmail,
 				'ownreceipt' => $this->yesnotoint($this->ownreceipt),
 				'amount' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order) ? (WC_Subscriptions_Order::get_total_initial_payment($order) * 100) : ($order->order_total * 100)) : ($order->order_total * 100),
-				'orderid' => str_replace(_x('#', 'hash before order number', 'woocommerce'), "", $order->get_order_number()),
+				'orderid' => str_replace(_x('#', 'hash before order number', 'woocommerce'), '', $order->get_order_number()),
 				'currency' => get_woocommerce_currency(),
 				'callbackurl' => $this->fix_url(add_query_arg('wooorderid', $order_id, add_query_arg('wc-api', 'WC_Gateway_EPayDk', $this->get_return_url($order)))),
 				'accepturl' => $this->fix_url($this->get_return_url($order)),
@@ -252,6 +301,27 @@ function add_wc_epay_dk_gateway()
 				'language' => $this->get_language_code(get_locale()),
 				'subscription' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order)) ? 1 : 0 : 0
 			);
+
+
+			if ($this->is_url($this->cssurl)) {
+				$epay_args['cssurl'] = $this->cssurl;
+			}
+			if ($this->is_url($this->mobilecssurl)) {
+				$epay_args['mobilecssurl'] = $this->mobilecssurl;
+			}
+
+			if ($this->is_hex_color($this->backgroundcolor)) {
+				$epay_args['backgroundcolor'] = str_replace('#', '', $this->backgroundcolor);
+
+				$opacity = intval($this->opacity);
+				if (intval($this->windowstate) == 1 && $opacity >= 0 && $opacity <= 100) {
+					$epay_args['opacity'] = $opacity;
+				}
+			}
+
+			if ($this->is_analytics($this->googletracker)) {
+				$epay_args['googletracker'] = $this->googletracker;
+			}
 
 			if ($this->yesnotoint($this->settings['enableinvoice'])) {
 				$invoice = array();
