@@ -396,7 +396,7 @@ function add_wc_epay_dk_gateway()
 			$epay_args = apply_filters('epay_woocommerce_generate_form_args', $epay_args);
 
 			if (strlen($this->md5key) > 0) {
-				$hash = "";
+				$hash = '';
 
 				foreach ($epay_args as $key => $value) {
 					$hash .= $value;
@@ -420,8 +420,8 @@ function add_wc_epay_dk_gateway()
 			}
 			</script>
 			<script type="text/javascript" src="https://ssl.ditonlinebetalingssystem.dk/integration/ewindow/paymentwindow.js" charset="UTF-8"></script>
-			<a class="button" onclick="javascript: paymentwindow.open();" id="submit_epay_payment_form" />' . __('Pay via ePay', 'woocommerce-gateway-epay-dk') . '</a>
-			<a class="button cancel" href="' . esc_url($order->get_cancel_order_url()) . '">' . __('Cancel order &amp; restore cart', 'woocommerce-gateway-epay-dk') . '</a>';
+			<a class="button" onclick="javascript: paymentwindow.open();" id="submit_epay_payment_form" />' . apply_filters('epay_woocommerce_pay_order_button_label', __('Pay via ePay', 'woocommerce-gateway-epay-dk')) . '</a>
+			<a class="button cancel" href="' . esc_url($order->get_cancel_order_url()) . '">' . apply_filters('epay_woocommerce_cancel_order_button_label', __('Cancel order &amp; restore cart', 'woocommerce-gateway-epay-dk')) . '</a>';
 		}
 
 		private function jsonValueRemoveSpecialCharacters($value)
@@ -494,7 +494,7 @@ function add_wc_epay_dk_gateway()
 		 **/
 		public function receipt_page($order)
 		{
-			echo '<p>' . __('Thank you for your order, please click the button below to pay with ePay.', 'woocommerce-gateway-epay-dk') . '</p>';
+			echo apply_filters('epay_woocommerce_thank_message', '<p>' . __('Thank you for your order, please click the button below to pay with ePay.', 'woocommerce-gateway-epay-dk') . '</p>');
 			echo $this->generate_epay_form($order);
 		}
 
