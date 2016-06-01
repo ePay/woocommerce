@@ -206,6 +206,17 @@ function add_wc_epay_dk_gateway()
 		} // End init_form_fields()
 
 		/**
+		 * Get default tracking id from google-analytics-for-wordpress plugin from MonsterInsights, previously Yoast
+		 */
+		private function get_default_google_tracker_id() {
+			if( class_exists('Yoast_GA_Options') ) {
+				$yoast_options = Yoast_GA_Options::instance();
+				return $yoast_options->get_tracking_code();
+			}
+			return '';
+		}
+
+		/**
 		 * Admin Panel Options
 		 * - Options for bits like 'title' and availability on a country-by-country basis
 		 *
