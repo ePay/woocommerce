@@ -61,6 +61,11 @@ function add_wc_epay_dk_gateway()
 			$this->ownreceipt = $this->settings['ownreceipt'];
 			$this->remoteinterface = $this->settings['remoteinterface'];
 			$this->remotepassword = $this->settings['remotepassword'];
+			$this->cssurl = $this->settings['cssurl'];
+			$this->mobilecssurl = $this->settings['mobilecssurl'];
+			$this->backgroundcolor = $this->settings['backgroundcolor'];
+			$this->opacity = $this->settings['opacity'];
+			$this->googletracker = $this->settings['googletracker'];
 
 			// Actions
 
