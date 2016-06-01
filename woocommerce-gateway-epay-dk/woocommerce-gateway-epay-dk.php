@@ -494,8 +494,10 @@ function add_wc_epay_dk_gateway()
 		 **/
 		public function receipt_page($order)
 		{
+			do_action('epay_woocommerce_before_output_receipt_page');
 			echo apply_filters('epay_woocommerce_thank_message', '<p>' . __('Thank you for your order, please click the button below to pay with ePay.', 'woocommerce-gateway-epay-dk') . '</p>');
 			echo $this->generate_epay_form($order);
+			do_action('epay_woocommerce_after_output_receipt_page');
 		}
 
 		/**
