@@ -309,16 +309,30 @@ function add_wc_epay_dk_gateway()
 				'group' => $this->group,
 				'mailreceipt' => $this->authmail,
 				'ownreceipt' => $this->yesnotoint($this->ownreceipt),
-				'amount' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order) ? (WC_Subscriptions_Order::get_total_initial_payment($order) * 100) : ($order->order_total * 100)) : ($order->order_total * 100),
 				'orderid' => str_replace(_x('#', 'hash before order number', 'woocommerce'), '', $order->get_order_number()),
 				'currency' => get_woocommerce_currency(),
 				'callbackurl' => $this->fix_url(add_query_arg('wooorderid', $order_id, add_query_arg('wc-api', 'WC_Gateway_EPayDk', $this->get_return_url($order)))),
 				'accepturl' => $this->fix_url($this->get_return_url($order)),
 				'cancelurl' => $this->fix_url($order->get_cancel_order_url()),
 				'language' => $this->get_language_code(get_locale()),
-				'subscription' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order)) ? 1 : 0 : 0
 			);
 
+			// Integration with WooCommerce Subscriptions
+			// new way since WooCommerce Subscriptions v2+
+			if( is_a($order, 'WC_Subscription') && function_exists('wcs_order_contains_subscription') && wcs_order_contains_subscription($order) ) {
+				$epay_args['subscription'] = 1;
+				$epay_args['amount'] = $order->get_total_initial_payment() * 100;
+			}
+			// deprecated way since Subscriptions v2+
+			else if( class_exists('WC_Subscriptions_Order') && WC_Subscriptions_Order::order_contains_subscription($order) ) {
+				$epay_args['subscription'] = 1;
+				$epay_args['amount'] = WC_Subscriptions_Order::get_total_initial_payment($order) * 100;
+			}
+			// not a subscription
+			else {
+				$epay_args['subscription'] = 0;
+				$epay_args['amount'] = $order->get_total() * 100;
+			}
 
 			if ($this->is_url($this->cssurl)) {
 				$epay_args['cssurl'] = $this->cssurl;
