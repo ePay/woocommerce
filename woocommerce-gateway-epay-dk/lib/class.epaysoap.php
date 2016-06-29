@@ -37,7 +37,7 @@ class epaysoap
 		$result = $this->client->authorize($epay_params);
 		
 		if($result->authorizeResult == true)
-			return true;
+			return $result;
 		else
 		{
 			if($result->epayresponse != "-1")

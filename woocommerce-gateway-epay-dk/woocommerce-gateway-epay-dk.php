@@ -9,9 +9,9 @@ Author URI: http://www.epay.dk/epay-payment-solutions/
 Text Domain: epay
  */
 
-add_action('plugins_loaded', 'add_wc_epay_dk_gateway', 0);
+add_action('plugins_loaded', 'init_wc_epay_dk_gateway');
 
-function add_wc_epay_dk_gateway()
+function init_wc_epay_dk_gateway()
 {
 	if ( ! class_exists( 'WC_Payment_Gateway' ) ) { return; }
 
@@ -22,23 +22,48 @@ function add_wc_epay_dk_gateway()
      **/
 	class WC_Gateway_EPayDk extends WC_Payment_Gateway
 	{
+        
+        public static $_instance;
+        /**
+         * get_instance
+         *
+         * Returns a new instance of self, if it does not already exist.
+         *
+         * @access public
+         * @static
+         * @return object WC_Gateway_EPayDK
+         */
+		public static function get_instance() {
+			if (!isset( self::$_instance ) ) {
+				self::$_instance = new self();
+			}
+			return self::$_instance;
+		}
+        
+        
+        
 		public function __construct()
 		{
-			global $woocommerce;
-
 			$this->id = 'epay_dk';
 			$this->method_title = 'ePay';
 			$this->icon = WP_PLUGIN_URL . "/" . plugin_basename(dirname(__FILE__ )) . '/ePay-logo.png';
 			$this->has_fields = false;
 
-			$this->supports = array('subscriptions', 'products', 'subscription_cancellation', 'subscription_reactivation', 'subscription_suspension', 'subscription_amount_changes', 'subscription_date_changes');
+			$this->supports = array('subscriptions',
+                'products',
+                'subscription_cancellation',
+                'subscription_reactivation',
+                'subscription_suspension',
+                'subscription_amount_changes',
+                'subscription_date_changes'
+                );
 
 			// Load the form fields.
 			$this->init_form_fields();
 
 			// Load the settings.
 			$this->init_settings();
-
+           
             if($this->settings["remoteinterface"] == "yes")
                 $this->supports = array_merge($this->supports, array('refunds'));
 
@@ -57,22 +82,31 @@ function add_wc_epay_dk_gateway()
 			$this->remoteinterface = $this->settings["remoteinterface"];
 			$this->remotepassword = $this->settings["remotepassword"];
 
-			// Actions
-			add_action('init', array(& $this, 'check_callback', ));
-			add_action('valid-epay-callback', array(&$this, 'successful_request', ));
-
-			if($this->settings["remoteinterface"] == "yes")
-            {
-				add_action('add_meta_boxes', array( &$this, 'epay_meta_boxes' ), 10, 0);
-            }
-			add_action('woocommerce_api_' . strtolower(get_class()), array($this, 'check_callback'));
-			add_action('wp_before_admin_bar_render', array($this, 'epay_action', ));
-			add_action('woocommerce_update_options_payment_gateways', array($this, 'process_admin_options', ));
-			add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
-			add_action('woocommerce_scheduled_subscription_payment_epay_dk', array($this, 'scheduled_subscription_payment'), 10, 2);		
-			add_action('woocommerce_receipt_epay_dk', array($this, 'receipt_page'));
+			
 		}
 
+        
+        function init_hooks()
+        {
+            // Actions
+			add_action('valid-epay-callback', array($this, 'successful_request'));
+
+            if(is_admin())
+            {
+                if($this->settings["remoteinterface"] == "yes")
+                {
+				    add_action( 'add_meta_boxes', array( $this, 'epay_meta_boxes'));
+				}
+                add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
+                add_action('wp_before_admin_bar_render', array($this, 'epay_action', ));
+            }
+            
+			add_action('woocommerce_api_' . strtolower(get_class()), array($this, 'check_callback'));
+			add_action('woocommerce_scheduled_subscription_payment_' . $this->id, array($this, 'scheduled_subscription_payment'), 10, 2);		
+			add_action('woocommerce_receipt_' . $this->id, array($this, 'receipt_page'));
+        }
+        
+        
         /**
          * Initialise Gateway Settings Form Fields
          */
@@ -220,8 +254,6 @@ function add_wc_epay_dk_gateway()
          **/
 	    public function generate_epay_form($order_id)
 		{
-			global $woocommerce;
-
 			$order = new WC_Order($order_id);
 
 			$epay_args = array
@@ -384,29 +416,63 @@ function add_wc_epay_dk_gateway()
             return false;
         }
 
-		function scheduled_subscription_payment($amount_to_charge, $order)
-		{
-			require_once (epay_LIB . 'class.epaysoap.php');
+         function scheduled_subscription_payment($amount_to_charge, $order)
+         {
+             require_once (epay_LIB . 'class.epaysoap.php');
+             
+             try
+             {
+                 $key = WC_Subscriptions_Manager::get_subscription_key($order->id);
+                 $subscription = WC_Subscriptions_Manager::get_subscription($key);
+                 $subscriptionOrderId = $subscription["order_id"];
+                 $subscriptionid = get_post_meta($subscriptionOrderId, 'Subscription ID', true);
+                 $webservice = new epaysoap($this->remotepassword, true);
+                 $authorize = $webservice->authorize($this->merchant, $subscriptionid, date("dmY") . $subscriptionOrderId, $amount_to_charge * 100, $this->get_iso_code(get_woocommerce_currency()), (bool)$this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
+                 if(!is_wp_error($authorize))
+                 {					
+                     if($authorize->authorizeResult)
+                     { 
+                         
+                         WC_Subscriptions_Manager::process_subscription_payments_on_order($subscriptionOrderId);
+                         update_post_meta($order->id,'Transaction ID', $authorize->transactionid);
+                         $order->payment_complete();
+                     }
+                   
+                 }else
+                 {
+                     foreach ($authorize->get_error_messages() as $error)
+                         throw new Exception ($error->get_error_message());
+                 }
+             }
+             catch(Exception $error)
+             {
+                 WC_Subscriptions_Manager::process_subscription_payment_failure_on_order($subscriptionOrderId);
+             }
+         }
+       
 
-			try
-			{
-				$key = WC_Subscriptions_Manager::get_subscription_key($order->id);				$subscription = WC_Subscriptions_Manager::get_subscription($key);				$subscriptionOrderId = $subscription["order_id"];				$subscriptionid = get_post_meta($subscriptionOrderId, 'Subscription ID', true);				$webservice = new epaysoap($this->remotepassword, true);				$authorize = $webservice->authorize($this->merchant, $subscriptionid, date("dmY") . $subscriptionOrderId, $amount_to_charge * 100, $this->get_iso_code(get_woocommerce_currency()), (bool)$this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
-				if(!is_wp_error($authorize))
-				{					if($authorize)					{
-						WC_Subscriptions_Manager::process_subscription_payments_on_order($subscriptionOrderId);					}
-				}
-				else
-				{
-					foreach ($authorize->get_error_messages() as $error)
-						throw new Exception ($error->get_error_message());
-				}
-			}
-			catch(Exception $error)
-			{
-				WC_Subscriptions_Manager::process_subscription_payment_failure_on_order($subscriptionOrderId);
-			}
-		}
-
+        public function get_initial_subscription_id($order)
+        {
+            $is_subscription = wcs_is_subscription( $order->id );
+            if($is_subscription)
+            {
+                $original_order = new WC_Order( $order->post->post_parent );
+                $subscriptionid = get_post_meta($original_order->id, 'Subscription ID', true);
+                return $subscriptionid;
+            }
+            else if(wcs_order_contains_renewal( $order ))
+            {
+                $subscriptions = wcs_get_subscriptions_for_renewal_order($order);
+                $subscription = end( $subscriptions );
+                $original_order = new WC_Order($subscription->post->post_parent);
+                $subscriptionid = get_post_meta($original_order->id, 'Subscription ID', true);
+                return $subscriptionid;
+            }
+            
+            return null;
+        }
+        
+        
 		/**
          * receipt_page
          **/
@@ -503,8 +569,6 @@ function add_wc_epay_dk_gateway()
 
 		public function epay_action()
 		{
-			global $woocommerce;
-
 			if(isset($_GET["epay_action"]))
 			{
 				require_once (epay_LIB . 'class.epaysoap.php');
@@ -574,7 +638,7 @@ function add_wc_epay_dk_gateway()
 
 		public function epay_meta_box_payment()
 		{
-			global $post, $woocommerce;
+			global $post;
 
 			$order = new WC_Order($post->ID);
 
@@ -1226,6 +1290,7 @@ function add_wc_epay_dk_gateway()
 
 			return '208';
 		}
+
 	}
 
 	/**
@@ -1236,21 +1301,14 @@ function add_wc_epay_dk_gateway()
 		$methods[] = 'WC_Gateway_EPayDk';
 		return $methods;
 	}
-
-	function init_epay_dk_gateway()
-	{
-		$plugin_dir = basename(dirname(__FILE__ ));
-		load_plugin_textdomain('woocommerce-gateway-epay-dk', false, $plugin_dir . '/languages/');
-	}
-
 	add_filter('woocommerce_payment_gateways', 'add_epay_dk_gateway');
-	add_action('plugins_loaded', 'init_epay_dk_gateway');
-
-	function WC_Gateway_EPayDk()
-	{
-	    return new WC_Gateway_EPayDk();
-	}
-
-	if (is_admin())
-    	add_action('load-post.php', 'WC_Gateway_EPayDk');
+	WC_Gateway_EPayDk::get_instance()->init_hooks();
+    
+     add_action('plugins_loaded', 'init_epay_dk_gateway');
+     
+     function init_epay_dk_gateway()
+     {
+         $plugin_dir = basename(dirname(__FILE__ ));
+         load_plugin_textdomain('woocommerce-gateway-epay-dk', false, $plugin_dir . '/languages/');
+     }
 }
