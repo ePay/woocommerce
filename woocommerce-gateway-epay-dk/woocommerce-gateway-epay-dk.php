@@ -22,7 +22,8 @@ function init_wc_epay_dk_gateway()
      **/
 	class WC_Gateway_EPayDk extends WC_Payment_Gateway
 	{
-        
+        const MODULE_VERSION = '2.5';
+
         public static $_instance;
         /**
          * get_instance
@@ -39,9 +40,7 @@ function init_wc_epay_dk_gateway()
 			}
 			return self::$_instance;
 		}
-        
-        
-        
+
 		public function __construct()
 		{
 			$this->id = 'epay_dk';
@@ -63,7 +62,7 @@ function init_wc_epay_dk_gateway()
 
 			// Load the settings.
 			$this->init_settings();
-           
+
             if($this->settings["remoteinterface"] == "yes")
                 $this->supports = array_merge($this->supports, array('refunds'));
 
@@ -81,11 +80,11 @@ function init_wc_epay_dk_gateway()
 			$this->ownreceipt = $this->settings["ownreceipt"];
 			$this->remoteinterface = $this->settings["remoteinterface"];
 			$this->remotepassword = $this->settings["remotepassword"];
-
-			
+            $this->enableinvoice = $this->settings["enableinvoice"];
+            $this->addfeetoorder = $this->settings["addfeetoorder"];
 		}
 
-        
+
         function init_hooks()
         {
             // Actions
@@ -93,20 +92,19 @@ function init_wc_epay_dk_gateway()
 
             if(is_admin())
             {
-                if($this->settings["remoteinterface"] == "yes")
+                if($this->remoteinterface == "yes")
                 {
 				    add_action( 'add_meta_boxes', array( $this, 'epay_meta_boxes'));
 				}
                 add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
                 add_action('wp_before_admin_bar_render', array($this, 'epay_action', ));
             }
-            
+
 			add_action('woocommerce_api_' . strtolower(get_class()), array($this, 'check_callback'));
-			add_action('woocommerce_scheduled_subscription_payment_' . $this->id, array($this, 'scheduled_subscription_payment'), 10, 2);		
+			add_action('woocommerce_scheduled_subscription_payment_' . $this->id, array($this, 'scheduled_subscription_payment'), 10, 2);
 			add_action('woocommerce_receipt_' . $this->id, array($this, 'receipt_page'));
         }
-        
-        
+
         /**
          * Initialise Gateway Settings Form Fields
          */
@@ -238,15 +236,7 @@ function init_wc_epay_dk_gateway()
 
 		function yesnotoint($str)
 		{
-			switch($str)
-			{
-				case 'yes':
-					return 1;
-					break;
-				case 'no':
-					return 0;
-					break;
-			}
+            return $str === 'yes' ? 1 : 0;
 		}
 
 		/**
@@ -258,47 +248,78 @@ function init_wc_epay_dk_gateway()
 
 			$epay_args = array
 			(
-				'merchantnumber' => $this->merchant,
+                'encoding' => "UTF-8",
+			    'cms' => "woocommerce ".$this::MODULE_VERSION,
+                'windowstate' => $this->windowstate,
+                'merchantnumber' => $this->merchant,
 				'windowid' => $this->windowid,
-				'windowstate' => $this->windowstate,
-				'instantcallback' => 1,
-				'instantcapture' => $this->yesnotoint($this->instantcapture),
-				'group' => $this->group,
-				'mailreceipt' => $this->authmail,
-				'ownreceipt' => $this->yesnotoint($this->ownreceipt),
-				'amount' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order ) ? (WC_Subscriptions_Order::get_total_initial_payment($order)*100) : ($order->order_total * 100)) : ($order->order_total * 100),
-				'orderid' => str_replace(_x( '#', 'hash before order number', 'woocommerce'), "", $order->get_order_number()),
-				'currency' => get_woocommerce_currency(),
-				'callbackurl' => $this->fix_url(add_query_arg ('wooorderid', $order_id, add_query_arg ('wc-api', 'WC_Gateway_EPayDk', $this->get_return_url( $order )))),
-				'accepturl' => $this->fix_url($this->get_return_url($order)),
+                'amount' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order ) ? (WC_Subscriptions_Order::get_total_initial_payment($order)*100) : ($order->order_total * 100)) : ($order->order_total * 100),
+                'currency' => get_woocommerce_currency(),
+                'orderid' => str_replace(_x( '#', 'hash before order number', 'woocommerce'), "", $order->get_order_number()),
+                'accepturl' => $this->fix_url($this->get_return_url($order)),
 				'cancelurl' => $this->fix_url($order->get_cancel_order_url()),
-				'language' => $this->get_language_code(get_locale()),
+                'callbackurl' => $this->fix_url(add_query_arg ('wooorderid', $order_id, add_query_arg ('wc-api', 'WC_Gateway_EPayDk', $this->get_return_url( $order )))),
+                'mailreceipt' => $this->authmail,
+                'instantcapture' => $this->yesnotoint($this->instantcapture),
+                'group' => $this->group,
+                'language' => $this->get_language_code(get_locale()),
+                'ownreceipt' => $this->yesnotoint($this->ownreceipt),
+                'timeout' => "60",
+                'invoice' => $this->createInvoice($order),
 				'subscription' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order)) ? 1 : 0 : 0
 			);
 
-            if($this->settings["enableinvoice"] == "yes")
+			if(strlen($this->md5key) > 0)
+			{
+				$hash = "";
+				foreach($epay_args as $value)
+				{
+					$hash .= $value;
+				}
+				$epay_args["hash"] = md5($hash . $this->md5key);
+			}
+
+            $epay_args_array = array();
+            foreach ($epay_args as $key => $value)
             {
-                $invoice = array();
+                $epay_args_array[] = "'" . esc_attr($key) . "':'" . $value . "'";
+            }
 
-                $invoice["customer"] = array(
-                    "emailaddress" => $order->billing_email,
-                    "firstname" => $this->jsonValueRemoveSpecialCharacters($order->billing_first_name),
-                    "lastname" => $this->jsonValueRemoveSpecialCharacters($order->billing_last_name),
-                    "address" => $this->jsonValueRemoveSpecialCharacters($order->billing_address_1 . ($order->billing_address_2 != null) ? ' ' . $order->billing_address_2 : ''),
-                    "zip" => $order->billing_postcode,
-                    "city" => $order->billing_city,
-                    "country" => $order->billing_country
-                );
+            $paymentScript = '<script type="text/javascript">
+			function PaymentWindowReady() {
+				paymentwindow = new PaymentWindow({
+					' . implode(',', $epay_args_array) . '
+				});
+				paymentwindow.open();
+			}
+			</script>
+			<script type="text/javascript" src="https://ssl.ditonlinebetalingssystem.dk/integration/ewindow/paymentwindow.js" charset="UTF-8"></script>
+			<a class="button" onclick="javascript: paymentwindow.open();" id="submit_epay_payment_form" />' . __('Pay via ePay', 'woocommerce-gateway-epay-dk') . '</a>
+			<a class="button cancel" href="' . esc_url($order->get_cancel_order_url()) . '">' . __('Cancel order &amp; restore cart', 'woocommerce-gateway-epay-dk') . '</a>';
 
-                $invoice["shippingaddress"] = array(
-                    "firstname" => $this->jsonValueRemoveSpecialCharacters($order->shipping_first_name),
-                    "lastname" => $this->jsonValueRemoveSpecialCharacters($order->shipping_last_name),
-                    "address" => $this->jsonValueRemoveSpecialCharacters($order->shipping_address_1 . ($order->shipping_address_2 != null) ? ' ' . $order->shipping_address_2 : ''),
-                    "zip" => $order->shipping_postcode,
-                    "city" => $order->shipping_city,
-                    "country" => $order->shipping_country
-                );
+            return $paymentScript;
+		}
 
+        private function createInvoice($order)
+        {
+            if($this->enableinvoice  == "yes")
+            {
+                $invoice["customer"]["emailaddress"] = $this->jsonValueRemoveSpecialCharacters($order->billing_email);
+                $invoice["customer"]["firstname"] = $this->jsonValueRemoveSpecialCharacters($order->billing_first_name);
+                $invoice["customer"]["lastname"] = $this->jsonValueRemoveSpecialCharacters($order->billing_last_name);
+                $invoice["customer"]["address"] = $this->jsonValueRemoveSpecialCharacters($order->billing_address_1);
+                $invoice["customer"]["zip"] = $this->jsonValueRemoveSpecialCharacters($order->billing_postcode);
+                $invoice["customer"]["city"] = $this->jsonValueRemoveSpecialCharacters($order->billing_city);
+                $invoice["customer"]["country"] = $this->jsonValueRemoveSpecialCharacters($order->billing_country);
+
+                $invoice["shippingaddress"]["firstname"] = $this->jsonValueRemoveSpecialCharacters($order->shipping_first_name);
+                $invoice["shippingaddress"]["lastname"] = $this->jsonValueRemoveSpecialCharacters($order->shipping_last_name);
+                $invoice["shippingaddress"]["address"] = $this->jsonValueRemoveSpecialCharacters($order->shipping_address_1);
+                $invoice["shippingaddress"]["zip"] = $this->jsonValueRemoveSpecialCharacters($order->shipping_postcode);
+                $invoice["shippingaddress"]["city"] = $this->jsonValueRemoveSpecialCharacters($order->shipping_city);
+                $invoice["shippingaddress"]["country"] = $this->jsonValueRemoveSpecialCharacters($order->shipping_country);
+
+                $invoice["lines"] = array();
                 $items = $order->get_items();
                 foreach($items as $item)
                 {
@@ -335,49 +356,17 @@ function init_wc_epay_dk_gateway()
                     );
                 }
 
-                $epay_args['invoice'] = $this->jsonRemoveUnicodeSequences($invoice);
+                return json_encode($invoice,JSON_UNESCAPED_UNICODE);
             }
-
-			if(strlen($this->md5key) > 0)
-			{
-				$hash = "";
-
-				foreach($epay_args as $key => $value)
-				{
-					$hash .= $value;
-				}
-
-				$epay_args["hash"] = md5($hash . $this->md5key);
-			}
-
-			$epay_args_array = array();
-
-			foreach ($epay_args as $key => $value)
-			{
-				$epay_args_array[] = '\'' . esc_attr($key) . '\': \'' . $value . '\'';
-			}
-
-			return '<script type="text/javascript">
-			function PaymentWindowReady() {
-				paymentwindow = new PaymentWindow({
-					' . implode(',', $epay_args_array) . '
-				});
-				paymentwindow.open();
-			}
-			</script>
-			<script type="text/javascript" src="https://ssl.ditonlinebetalingssystem.dk/integration/ewindow/paymentwindow.js" charset="UTF-8"></script>
-			<a class="button" onclick="javascript: paymentwindow.open();" id="submit_epay_payment_form" />' . __('Pay via ePay', 'woocommerce-gateway-epay-dk') . '</a>
-			<a class="button cancel" href="' . esc_url($order->get_cancel_order_url()) . '">' . __('Cancel order &amp; restore cart', 'woocommerce-gateway-epay-dk') . '</a>';
-		}
-
-        private function jsonValueRemoveSpecialCharacters($value)
-        {
-            return preg_replace('/[^\p{Latin}\d ]/u', '', $value);
+            else
+            {
+                return "";
+            }
         }
 
-        private function jsonRemoveUnicodeSequences($struct)
+        function jsonValueRemoveSpecialCharacters($value)
         {
-            return preg_replace("/\\\\u([a-f0-9]{4})/e", "iconv('UCS-4LE','UTF-8',pack('V', hexdec('U$1')))", json_encode($struct));
+            return preg_replace('/[^\p{Latin}\d ]/u', '', $value);
         }
 
 		/**
@@ -419,7 +408,7 @@ function init_wc_epay_dk_gateway()
          function scheduled_subscription_payment($amount_to_charge, $order)
          {
              require_once (epay_LIB . 'class.epaysoap.php');
-             
+
              try
              {
                  $key = WC_Subscriptions_Manager::get_subscription_key($order->id);
@@ -429,15 +418,15 @@ function init_wc_epay_dk_gateway()
                  $webservice = new epaysoap($this->remotepassword, true);
                  $authorize = $webservice->authorize($this->merchant, $subscriptionid, date("dmY") . $subscriptionOrderId, $amount_to_charge * 100, $this->get_iso_code(get_woocommerce_currency()), (bool)$this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
                  if(!is_wp_error($authorize))
-                 {					
+                 {
                      if($authorize->authorizeResult)
-                     { 
-                         
+                     {
+
                          WC_Subscriptions_Manager::process_subscription_payments_on_order($subscriptionOrderId);
                          update_post_meta($order->id,'Transaction ID', $authorize->transactionid);
                          $order->payment_complete();
                      }
-                   
+
                  }else
                  {
                      foreach ($authorize->get_error_messages() as $error)
@@ -449,7 +438,7 @@ function init_wc_epay_dk_gateway()
                  WC_Subscriptions_Manager::process_subscription_payment_failure_on_order($subscriptionOrderId);
              }
          }
-       
+
 
         public function get_initial_subscription_id($order)
         {
@@ -468,11 +457,11 @@ function init_wc_epay_dk_gateway()
                 $subscriptionid = get_post_meta($original_order->id, 'Subscription ID', true);
                 return $subscriptionid;
             }
-            
+
             return null;
         }
-        
-        
+
+
 		/**
          * receipt_page
          **/
@@ -526,7 +515,8 @@ function init_wc_epay_dk_gateway()
 				// Payment completed
 				$order->add_order_note(__('Callback completed', 'woocommerce-gateway-epay-dk'));
 
-                if($this->settings["addfeetoorder"] == "yes")
+               // if($this->settings["addfeetoorder"] == "yes")
+                if($this->addfeetoorder == "yes")
                 {
                     $order_fee              = new stdClass();
                     $order_fee->id          = 'epay_fee';
@@ -1303,9 +1293,9 @@ function init_wc_epay_dk_gateway()
 	}
 	add_filter('woocommerce_payment_gateways', 'add_epay_dk_gateway');
 	WC_Gateway_EPayDk::get_instance()->init_hooks();
-    
+
      add_action('plugins_loaded', 'init_epay_dk_gateway');
-     
+
      function init_epay_dk_gateway()
      {
          $plugin_dir = basename(dirname(__FILE__ ));
