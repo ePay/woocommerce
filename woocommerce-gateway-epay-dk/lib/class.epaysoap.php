@@ -37,24 +37,6 @@ class epaysoap
 		$result = $this->client->authorize($epay_params);
 
         return $result;
-
-        //if($result->authorizeResult == true)
-        //{
-        //    return $result;
-        //}
-        //else
-        //{
-        //    if($result->epayresponse != "-1")
-        //    {
-        //        return new WP_Error('epay', $this->getEpayError($merchantnumber, $result->epayresponse));
-        //    }
-        //    elseif($result->pbsresponse != "-1")
-        //    {
-        //        return new WP_Error('epay', $this->getPbsError($merchantnumber, $result->pbsresponse));
-        //    }
-
-        //    return new WP_Error('epay', __('An unknown error occured', 'woocommerce-gateway-epay-dk'));
-        //}
 	}
 
 	public function deletesubscription($merchantnumber, $subscriptionid)

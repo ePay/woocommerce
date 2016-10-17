@@ -3,7 +3,7 @@
 Plugin Name: WooCommerce ePay Payment Solutions Gateway
 Plugin URI: http://www.epay.dk
 Description: A payment gateway for ePay payment solutions standard
-Version: 2.5
+Version: 2.6
 Author: ePay
 Author URI: http://www.epay.dk/epay-payment-solutions
 Text Domain: epay
@@ -22,7 +22,7 @@ function init_wc_epay_dk_gateway()
      **/
 	class WC_Gateway_EPayDk extends WC_Payment_Gateway
 	{
-        const MODULE_VERSION = '2.5';
+        const MODULE_VERSION = '2.6';
 
         public static $_instance;
         /**
