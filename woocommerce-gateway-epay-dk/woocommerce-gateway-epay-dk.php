@@ -2,10 +2,10 @@
 /*
 Plugin Name: WooCommerce ePay Payment Solutions Gateway
 Plugin URI: http://www.epay.dk
-Description: A payment gateway for ePay payment solutions standard (http://www.epay.dk/epay-payment-solutions/).
+Description: A payment gateway for ePay payment solutions standard
 Version: 2.5
 Author: ePay
-Author URI: http://www.epay.dk/epay-payment-solutions/
+Author URI: http://www.epay.dk/epay-payment-solutions
 Text Domain: epay
  */
 
@@ -121,16 +121,16 @@ function init_wc_epay_dk_gateway()
 								'title' => __( 'Title', 'epay' , 'woocommerce-gateway-epay-dk'),
 								'type' => 'text',
 								'description' => __( 'This controls the title which the user sees during checkout.', 'woocommerce'),
-								'default' => __( 'ePay Payment Solutions', 'epay')
+								'default' => __('ePay Payment Solutions', 'epay')
 							),
 				'description' => array(
-								'title' => __( 'Description', 'woocommerce' , 'woocommerce-gateway-epay-dk'),
+								'title' => __('Description', 'woocommerce' , 'woocommerce-gateway-epay-dk'),
 								'type' => 'textarea',
 								'description' => __( 'This controls the description which the user sees during checkout.', 'woocommerce'),
 								'default' => __("Pay using ePay Payment Solutions", 'woocommerce-gateway-epay-dk')
 							),
 				'merchant' => array(
-								'title' => __( 'Merchant number', 'woocommerce-gateway-epay-dk'),
+								'title' => __('Merchant number', 'woocommerce-gateway-epay-dk'),
 								'type' => 'text',
 								'default' => ''
 							),
@@ -210,7 +210,7 @@ function init_wc_epay_dk_gateway()
 			$version = $plugin_data["Version"];
 
 			echo '<h3>' . 'ePay Payment Solutions' . ' v' . $version . '</h3>';
-			echo __('<a href="http://woocommerce.wpguiden.dk/en/configuration#709" target="_blank">Documentation can be found here</a>', 'woocommerce-gateway-epay-dk');
+			echo '<a href="http://woocommerce.wpguiden.dk/en/configuration#709" target="_blank">'. __('Documentation can be found here', 'woocommerce-gateway-epay-dk').'</a>';
 			echo '<table class="form-table">';
             // Generate the HTML For the settings form.
             $this->generate_settings_html();
@@ -244,6 +244,9 @@ function init_wc_epay_dk_gateway()
          **/
 	    public function generate_epay_form($order_id)
 		{
+            require_once(epay_LIB . 'epayhelper.php');
+
+            $helper = new epayhelper();
 			$order = new WC_Order($order_id);
 
 			$epay_args = array
@@ -262,7 +265,7 @@ function init_wc_epay_dk_gateway()
                 'mailreceipt' => $this->authmail,
                 'instantcapture' => $this->yesnotoint($this->instantcapture),
                 'group' => $this->group,
-                'language' => $this->get_language_code(get_locale()),
+                'language' => $helper->get_language_code(get_locale()),
                 'ownreceipt' => $this->yesnotoint($this->ownreceipt),
                 'timeout' => "60",
                 'invoice' => $this->createInvoice($order),
@@ -384,7 +387,7 @@ function init_wc_epay_dk_gateway()
 
         function process_refund($order_id, $amount = null, $reason = '')
         {
-            require_once (epay_LIB . 'class.epaysoap.php');
+            require_once(epay_LIB . 'class.epaysoap.php');
 
             $order = new WC_Order($order_id);
             $transactionId = get_post_meta($order->id, 'Transaction ID', true);
@@ -407,34 +410,43 @@ function init_wc_epay_dk_gateway()
 
          function scheduled_subscription_payment($amount_to_charge, $order)
          {
-             require_once (epay_LIB . 'class.epaysoap.php');
-
+             require_once(epay_LIB . 'class.epaysoap.php');
+             require_once(epay_LIB . 'helper.php');
              try
              {
+                 $helper = new epayhelper();
                  $key = WC_Subscriptions_Manager::get_subscription_key($order->id);
                  $subscription = WC_Subscriptions_Manager::get_subscription($key);
                  $subscriptionOrderId = $subscription["order_id"];
                  $subscriptionid = get_post_meta($subscriptionOrderId, 'Subscription ID', true);
                  $webservice = new epaysoap($this->remotepassword, true);
-                 $authorize = $webservice->authorize($this->merchant, $subscriptionid, date("dmY") . $subscriptionOrderId, $amount_to_charge * 100, $this->get_iso_code(get_woocommerce_currency()), (bool)$this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
-                 if(!is_wp_error($authorize))
-                 {
-                     if($authorize->authorizeResult)
-                     {
+                 $authorize = $webservice->authorize($this->merchant, $subscriptionid, date("dmY") . $subscriptionOrderId, $amount_to_charge * 100, $helper->get_iso_code(get_woocommerce_currency()), (bool)$this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
 
+                 if($authorize->authorizeResult)
+                 {
                          WC_Subscriptions_Manager::process_subscription_payments_on_order($subscriptionOrderId);
                          update_post_meta($order->id,'Transaction ID', $authorize->transactionid);
                          $order->payment_complete();
+                 }
+                 else
+                 {
+                     $orderNote = __('Subscription could not be authorized', 'woocommerce-gateway-epay-dk');
+                     if($authorize->epayresponse != "-1")
+                     {
+                         $orderNote .= ' - ' . $webservice->getEpayError($this->merchant, $authorize->epayresponse);;
+                     }
+                     elseif($authorize->pbsresponse != "-1")
+                     {
+                         $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $authorize->epayresponse);
                      }
 
-                 }else
-                 {
-                     foreach ($authorize->get_error_messages() as $error)
-                         throw new Exception ($error->get_error_message());
+                     $order->add_order_note($orderNote);
+                     WC_Subscriptions_Manager::process_subscription_payment_failure_on_order($subscriptionOrderId);
                  }
              }
              catch(Exception $error)
              {
+                 $order->add_order_note(__('Subscription could not be authorized', 'woocommerce-gateway-epay-dk'));
                  WC_Subscriptions_Manager::process_subscription_payment_failure_on_order($subscriptionOrderId);
              }
          }
@@ -467,7 +479,7 @@ function init_wc_epay_dk_gateway()
          **/
 		function receipt_page( $order )
 		{
-			echo '<p>' . __('Thank you for your order, please click the button below to pay with ePay.', 'woocommerce-gateway-epay-dk') . '</p>';
+			echo '<p>' . __("Thank you for your order, please click the button below to pay with ePay.", "woocommerce-gateway-epay-dk") . '</p>';
 			echo $this->generate_epay_form($order);
 		}
 
@@ -486,9 +498,10 @@ function init_wc_epay_dk_gateway()
 		function successful_request( $posted )
 		{
 			$order = new WC_Order((int)$posted["wooorderid"]);
+            $psbReference = get_post_meta((int)$posted["wooorderid"],'Transaction ID',true);
 
-			if($order->has_status('pending'))
-			{
+			if(!empty($psbReference))
+            {
                 //Check for MD5 validity
                 $var = "";
 
@@ -511,11 +524,9 @@ function init_wc_epay_dk_gateway()
                     }
                 }
 
-
 				// Payment completed
 				$order->add_order_note(__('Callback completed', 'woocommerce-gateway-epay-dk'));
 
-               // if($this->settings["addfeetoorder"] == "yes")
                 if($this->addfeetoorder == "yes")
                 {
                     $order_fee              = new stdClass();
@@ -536,13 +547,18 @@ function init_wc_epay_dk_gateway()
 				update_post_meta((int)$posted["wooorderid"], 'Card no', $posted["cardno"]);
 
 				if(isset($posted["subscriptionid"]))
+                {
 					update_post_meta((int)$posted["wooorderid"], 'Subscription ID', $posted["subscriptionid"]);
+                }
+                echo "OK - Order Created";
 			}
+            else
+            {
+                echo "OK - Order already Created";
+            }
 
-			echo "OK";
 			status_header(200);
-
-			exit;
+            exit;
 		}
 
 		public function epay_meta_boxes()
@@ -628,14 +644,12 @@ function init_wc_epay_dk_gateway()
 
 		public function epay_meta_box_payment()
 		{
+            require_once (epay_LIB . 'class.epaysoap.php');
 			global $post;
 
 			$order = new WC_Order($post->ID);
-
-			$transactionId = get_post_meta($order->id, 'Transaction ID', true);
-
-			require_once (epay_LIB . 'class.epaysoap.php');
-
+            $transactionId = get_post_meta($order->id, 'Transaction ID', true);
+            
 			if(strlen($transactionId) > 0)
 			{
 				try
@@ -728,562 +742,12 @@ function init_wc_epay_dk_gateway()
 				<p>'.$message.'</p>
 			</div>';
 		}
-
-        private function get_language_code($locale)
-        {
-            switch($locale)
-            {
-                case "da_DK":
-                    return "1";
-                case "de_CH":
-                    return "7";
-                case "de_DE":
-                    return "7";
-                case "en_AU":
-                    return "2";
-                case "en_GB":
-                    return "2";
-                case "en_NZ":
-                    return "2";
-                case "en_US":
-                    return "2";
-                case "sv_SE":
-                    return "3";
-                case "nn_NO":
-                    return "4";
-            }
-
-            return "0";
-        }
-
-		private function get_iso_code($code)
-		{
-			switch(strtoupper($code))
-			{
-				case 'ADP':
-					return '020';
-					break;
-				case 'AED':
-					return '784';
-					break;
-				case 'AFA':
-					return '004';
-					break;
-				case 'ALL':
-					return '008';
-					break;
-				case 'AMD':
-					return '051';
-					break;
-				case 'ANG':
-					return '532';
-					break;
-				case 'AOA':
-					return '973';
-					break;
-				case 'ARS':
-					return '032';
-					break;
-				case 'AUD':
-					return '036';
-					break;
-				case 'AWG':
-					return '533';
-					break;
-				case 'AZM':
-					return '031';
-					break;
-				case 'BAM':
-					return '977';
-					break;
-				case 'BBD':
-					return '052';
-					break;
-				case 'BDT':
-					return '050';
-					break;
-				case 'BGL':
-					return '100';
-					break;
-				case 'BGN':
-					return '975';
-					break;
-				case 'BHD':
-					return '048';
-					break;
-				case 'BIF':
-					return '108';
-					break;
-				case 'BMD':
-					return '060';
-					break;
-				case 'BND':
-					return '096';
-					break;
-				case 'BOB':
-					return '068';
-					break;
-				case 'BOV':
-					return '984';
-					break;
-				case 'BRL':
-					return '986';
-					break;
-				case 'BSD':
-					return '044';
-					break;
-				case 'BTN':
-					return '064';
-					break;
-				case 'BWP':
-					return '072';
-					break;
-				case 'BYR':
-					return '974';
-					break;
-				case 'BZD':
-					return '084';
-					break;
-				case 'CAD':
-					return '124';
-					break;
-				case 'CDF':
-					return '976';
-					break;
-				case 'CHF':
-					return '756';
-					break;
-				case 'CLF':
-					return '990';
-					break;
-				case 'CLP':
-					return '152';
-					break;
-				case 'CNY':
-					return '156';
-					break;
-				case 'COP':
-					return '170';
-					break;
-				case 'CRC':
-					return '188';
-					break;
-				case 'CUP':
-					return '192';
-					break;
-				case 'CVE':
-					return '132';
-					break;
-				case 'CYP':
-					return '196';
-					break;
-				case 'CZK':
-					return '203';
-					break;
-				case 'DJF':
-					return '262';
-					break;
-				case 'DKK':
-					return '208';
-					break;
-				case 'DOP':
-					return '214';
-					break;
-				case 'DZD':
-					return '012';
-					break;
-				case 'ECS':
-					return '218';
-					break;
-				case 'ECV':
-					return '983';
-					break;
-				case 'EEK':
-					return '233';
-					break;
-				case 'EGP':
-					return '818';
-					break;
-				case 'ERN':
-					return '232';
-					break;
-				case 'ETB':
-					return '230';
-					break;
-				case 'EUR':
-					return '978';
-					break;
-				case 'FJD':
-					return '242';
-					break;
-				case 'FKP':
-					return '238';
-					break;
-				case 'GBP':
-					return '826';
-					break;
-				case 'GEL':
-					return '981';
-					break;
-				case 'GHC':
-					return '288';
-					break;
-				case 'GIP':
-					return '292';
-					break;
-				case 'GMD':
-					return '270';
-					break;
-				case 'GNF':
-					return '324';
-					break;
-				case 'GTQ':
-					return '320';
-					break;
-				case 'GWP':
-					return '624';
-					break;
-				case 'GYD':
-					return '328';
-					break;
-				case 'HKD':
-					return '344';
-					break;
-				case 'HNL':
-					return '340';
-					break;
-				case 'HRK':
-					return '191';
-					break;
-				case 'HTG':
-					return '332';
-					break;
-				case 'HUF':
-					return '348';
-					break;
-				case 'IDR':
-					return '360';
-					break;
-				case 'ILS':
-					return '376';
-					break;
-				case 'INR':
-					return '356';
-					break;
-				case 'IQD':
-					return '368';
-					break;
-				case 'IRR':
-					return '364';
-					break;
-				case 'ISK':
-					return '352';
-					break;
-				case 'JMD':
-					return '388';
-					break;
-				case 'JOD':
-					return '400';
-					break;
-				case 'JPY':
-					return '392';
-					break;
-				case 'KES':
-					return '404';
-					break;
-				case 'KGS':
-					return '417';
-					break;
-				case 'KHR':
-					return '116';
-					break;
-				case 'KMF':
-					return '174';
-					break;
-				case 'KPW':
-					return '408';
-					break;
-				case 'KRW':
-					return '410';
-					break;
-				case 'KWD':
-					return '414';
-					break;
-				case 'KYD':
-					return '136';
-					break;
-				case 'KZT':
-					return '398';
-					break;
-				case 'LAK':
-					return '418';
-					break;
-				case 'LBP':
-					return '422';
-					break;
-				case 'LKR':
-					return '144';
-					break;
-				case 'LRD':
-					return '430';
-					break;
-				case 'LSL':
-					return '426';
-					break;
-				case 'LTL':
-					return '440';
-					break;
-				case 'LVL':
-					return '428';
-					break;
-				case 'LYD':
-					return '434';
-					break;
-				case 'MAD':
-					return '504';
-					break;
-				case 'MDL':
-					return '498';
-					break;
-				case 'MGF':
-					return '450';
-					break;
-				case 'MKD':
-					return '807';
-					break;
-				case 'MMK':
-					return '104';
-					break;
-				case 'MNT':
-					return '496';
-					break;
-				case 'MOP':
-					return '446';
-					break;
-				case 'MRO':
-					return '478';
-					break;
-				case 'MTL':
-					return '470';
-					break;
-				case 'MUR':
-					return '480';
-					break;
-				case 'MVR':
-					return '462';
-					break;
-				case 'MWK':
-					return '454';
-					break;
-				case 'MXN':
-					return '484';
-					break;
-				case 'MXV':
-					return '979';
-					break;
-				case 'MYR':
-					return '458';
-					break;
-				case 'MZM':
-					return '508';
-					break;
-				case 'NAD':
-					return '516';
-					break;
-				case 'NGN':
-					return '566';
-					break;
-				case 'NIO':
-					return '558';
-					break;
-				case 'NOK':
-					return '578';
-					break;
-				case 'NPR':
-					return '524';
-					break;
-				case 'NZD':
-					return '554';
-					break;
-				case 'OMR':
-					return '512';
-					break;
-				case 'PAB':
-					return '590';
-					break;
-				case 'PEN':
-					return '604';
-					break;
-				case 'PGK':
-					return '598';
-					break;
-				case 'PHP':
-					return '608';
-					break;
-				case 'PKR':
-					return '586';
-					break;
-				case 'PLN':
-					return '985';
-					break;
-				case 'PYG':
-					return '600';
-					break;
-				case 'QAR':
-					return '634';
-					break;
-				case 'ROL':
-					return '642';
-					break;
-				case 'RUB':
-					return '643';
-					break;
-				case 'RUR':
-					return '810';
-					break;
-				case 'RWF':
-					return '646';
-					break;
-				case 'SAR':
-					return '682';
-					break;
-				case 'SBD':
-					return '090';
-					break;
-				case 'SCR':
-					return '690';
-					break;
-				case 'SDD':
-					return '736';
-					break;
-				case 'SEK':
-					return '752';
-					break;
-				case 'SGD':
-					return '702';
-					break;
-				case 'SHP':
-					return '654';
-					break;
-				case 'SIT':
-					return '705';
-					break;
-				case 'SKK':
-					return '703';
-					break;
-				case 'SLL':
-					return '694';
-					break;
-				case 'SOS':
-					return '706';
-					break;
-				case 'SRG':
-					return '740';
-					break;
-				case 'STD':
-					return '678';
-					break;
-				case 'SVC':
-					return '222';
-					break;
-				case 'SYP':
-					return '760';
-					break;
-				case 'SZL':
-					return '748';
-					break;
-				case 'THB':
-					return '764';
-					break;
-				case 'TJS':
-					return '972';
-					break;
-				case 'TMM':
-					return '795';
-					break;
-				case 'TND':
-					return '788';
-					break;
-				case 'TOP':
-					return '776';
-					break;
-				case 'TPE':
-					return '626';
-					break;
-				case 'TRL':
-					return '792';
-					break;
-				case 'TRY':
-					return '949';
-					break;
-				case 'TTD':
-					return '780';
-					break;
-				case 'TWD':
-					return '901';
-					break;
-				case 'TZS':
-					return '834';
-					break;
-				case 'UAH':
-					return '980';
-					break;
-				case 'UGX':
-					return '800';
-					break;
-				case 'USD':
-					return '840';
-					break;
-				case 'UYU':
-					return '858';
-					break;
-				case 'UZS':
-					return '860';
-					break;
-				case 'VEB':
-					return '862';
-					break;
-				case 'VND':
-					return '704';
-					break;
-				case 'VUV':
-					return '548';
-					break;
-				case 'XAF':
-					return '950';
-					break;
-				case 'XCD':
-					return '951';
-					break;
-				case 'XOF':
-					return '952';
-					break;
-				case 'XPF':
-					return '953';
-					break;
-				case 'YER':
-					return '886';
-					break;
-				case 'YUM':
-					return '891';
-					break;
-				case 'ZAR':
-					return '710';
-					break;
-				case 'ZMK':
-					return '894';
-					break;
-				case 'ZWD':
-					return '716';
-					break;
-			}
-
-			return '208';
-		}
-
 	}
 
-	/**
+	add_filter('woocommerce_payment_gateways', 'add_epay_dk_gateway');
+	WC_Gateway_EPayDk::get_instance()->init_hooks();
+
+    /**
      * Add the Gateway to WooCommerce
      **/
 	function add_epay_dk_gateway($methods)
@@ -1291,14 +755,7 @@ function init_wc_epay_dk_gateway()
 		$methods[] = 'WC_Gateway_EPayDk';
 		return $methods;
 	}
-	add_filter('woocommerce_payment_gateways', 'add_epay_dk_gateway');
-	WC_Gateway_EPayDk::get_instance()->init_hooks();
 
-     add_action('plugins_loaded', 'init_epay_dk_gateway');
-
-     function init_epay_dk_gateway()
-     {
-         $plugin_dir = basename(dirname(__FILE__ ));
-         load_plugin_textdomain('woocommerce-gateway-epay-dk', false, $plugin_dir . '/languages/');
-     }
+    $plugin_dir = basename(dirname(__FILE__ ));
+    load_plugin_textdomain('woocommerce-gateway-epay-dk', false, $plugin_dir . '/languages');
 }
