@@ -252,7 +252,7 @@ function init_wc_epay_dk_gateway()
 			$epay_args = array
 			(
                 'encoding' => "UTF-8",
-			    'cms' => "woocommerce ".$this::MODULE_VERSION,
+			    'cms' => $this->getModuleHeaderInfo(),
                 'windowstate' => $this->windowstate,
                 'merchantnumber' => $this->merchant,
 				'windowid' => $this->windowid,
@@ -371,6 +371,21 @@ function init_wc_epay_dk_gateway()
         {
             return preg_replace('/[^\p{Latin}\d ]/u', '', $value);
         }
+
+        /**
+         * Returns the module header
+         *
+         * @return string
+         */
+        private function getModuleHeaderInfo()
+        {
+            global $woocommerce;
+            $ePayVersion = WC_Gateway_EPayDk::MODULE_VERSION;
+            $woocommerceVersion = $woocommerce->version;
+            $result = 'WooCommerce/' . $woocommerceVersion . ' Module/' . $ePayVersion;
+            return $result;
+        }
+
 
 		/**
          * Process the payment and return the result
@@ -500,7 +515,7 @@ function init_wc_epay_dk_gateway()
 			$order = new WC_Order((int)$posted["wooorderid"]);
             $psbReference = get_post_meta((int)$posted["wooorderid"],'Transaction ID',true);
 
-			if(!empty($psbReference))
+			if(empty($psbReference))
             {
                 //Check for MD5 validity
                 $var = "";
@@ -649,7 +664,7 @@ function init_wc_epay_dk_gateway()
 
 			$order = new WC_Order($post->ID);
             $transactionId = get_post_meta($order->id, 'Transaction ID', true);
-            
+
 			if(strlen($transactionId) > 0)
 			{
 				try
