@@ -23,7 +23,7 @@ class epaysoap
 		$epay_params["merchantnumber"] = $merchantnumber;
 		$epay_params["subscriptionid"] = $subscriptionid;
 		$epay_params["orderid"] = $orderid;
-		$epay_params["amount"] = $amount;
+		$epay_params["amount"] = (string)$amount;
 		$epay_params["currency"] = $currency;
 		$epay_params["instantcapture"] = $instantcapture;
 		$epay_params["group"] = $group;
@@ -65,7 +65,7 @@ class epaysoap
 		$epay_params = array();
 		$epay_params["merchantnumber"] = $merchantnumber;
 		$epay_params["transactionid"] = $transactionid;
-		$epay_params["amount"] = $amount;
+		$epay_params["amount"] = (string)$amount;
 		$epay_params["pwd"] = $this->pwd;
 		$epay_params["pbsResponse"] = "-1";
 		$epay_params["epayresponse"] = "-1";
@@ -90,7 +90,7 @@ class epaysoap
 		$epay_params = array();
 		$epay_params["merchantnumber"] = $merchantnumber;
 		$epay_params["transactionid"] = $transactionid;
-		$epay_params["amount"] = $amount;
+		$epay_params["amount"] = (string)$amount;
 		$epay_params["pwd"] = $this->pwd;
 		$epay_params["epayresponse"] = "-1";
 		$epay_params["pbsresponse"] = "-1";
