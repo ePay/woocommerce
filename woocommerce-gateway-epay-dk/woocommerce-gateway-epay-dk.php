@@ -63,10 +63,7 @@ function init_wc_epay_dk_gateway()
 			// Load the settings.
 			$this->init_settings();
 
-            if($this->settings["remoteinterface"] == "yes")
-                $this->supports = array_merge($this->supports, array('refunds'));
-
-			// Define user set variables
+            // Define user set variables
 			$this->enabled = $this->settings["enabled"];
 			$this->title = $this->settings["title"];
 			$this->description = $this->settings["description"];
@@ -80,8 +77,13 @@ function init_wc_epay_dk_gateway()
 			$this->ownreceipt = $this->settings["ownreceipt"];
 			$this->remoteinterface = $this->settings["remoteinterface"];
 			$this->remotepassword = $this->settings["remotepassword"];
-            $this->enableinvoice = $this->settings["enableinvoice"];
-            $this->addfeetoorder = $this->settings["addfeetoorder"];
+            $this->enableinvoice = array_key_exists("enableinvoice", $this->settings) ? $this->settings["enableinvoice"] : "no";
+            $this->addfeetoorder = array_key_exists("addfeetoorder", $this->settings) ? $this->settings["addfeetoorder"] : "no";
+
+            if($this->yesnotoint($this->remoteinterface))
+            {
+                $this->supports = array_merge($this->supports, array('refunds'));
+            }
 		}
 
 
