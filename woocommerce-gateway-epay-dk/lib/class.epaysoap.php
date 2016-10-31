@@ -140,11 +140,11 @@ class epaysoap
 		$epay_params["epayresponsecode"] = $epay_response_code;
 		$epay_params["epayresponse"] = "-1";
 
-		$result = $this->client->getEpayError($epay_params);
+        $result = $this->client->getEpayError($epay_params);
 
-		if($result->getEpayErrorResult == "true")
+        if($result->getEpayErrorResult == "true")
         {
-            return $result->epayResponseString;
+            return $result->epayresponsestring;
         }
 
 		return __('An unknown error occured', 'woocommerce-gateway-epay-dk');
@@ -163,7 +163,7 @@ class epaysoap
 
 		if($result->getPbsErrorResult == "true")
         {
-			return $result->pbsResponeString;
+			return $result->pbsresponestring;
         }
 
         return __('An unknown error occured', 'woocommerce-gateway-epay-dk');
@@ -184,7 +184,10 @@ class epaysoap
 		else
 		{
 			if($result->epayresponse != "-1")
-				return new WP_Error('broke', $this->getEpayError($merchantnumber, $result->epayresponse));
+            {
+                $error_message = $this->getEpayError($merchantnumber, $result->epayresponse);
+				return new WP_Error('broke', $error_message);
+            }
 			else
 				return new WP_Error('broke', 'An unknown error occured');
 		}

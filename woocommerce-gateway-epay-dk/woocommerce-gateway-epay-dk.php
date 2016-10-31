@@ -425,48 +425,48 @@ function init_wc_epay_dk_gateway()
             return false;
         }
 
-         function scheduled_subscription_payment($amount_to_charge, $order)
-         {
-             require_once(epay_LIB . 'class.epaysoap.php');
-             require_once(epay_LIB . 'helper.php');
-             try
-             {
-                 $helper = new epayhelper();
-                 $key = WC_Subscriptions_Manager::get_subscription_key($order->id);
-                 $subscription = WC_Subscriptions_Manager::get_subscription($key);
-                 $subscriptionOrderId = $subscription["order_id"];
-                 $subscriptionid = get_post_meta($subscriptionOrderId, 'Subscription ID', true);
-                 $webservice = new epaysoap($this->remotepassword, true);
-                 $authorize = $webservice->authorize($this->merchant, $subscriptionid, date("dmY") . $subscriptionOrderId, $amount_to_charge * 100, $helper->get_iso_code(get_woocommerce_currency()), (bool)$this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
+        function scheduled_subscription_payment($amount_to_charge, $order)
+        {
+            require_once(epay_LIB . 'class.epaysoap.php');
+            require_once(epay_LIB . 'helper.php');
+            try
+            {
+                $helper = new epayhelper();
+                $key = WC_Subscriptions_Manager::get_subscription_key($order->id);
+                $subscription = WC_Subscriptions_Manager::get_subscription($key);
+                $subscriptionOrderId = $subscription["order_id"];
+                $subscriptionid = get_post_meta($subscriptionOrderId, 'Subscription ID', true);
+                $webservice = new epaysoap($this->remotepassword, true);
+                $authorize = $webservice->authorize($this->merchant, $subscriptionid, date("dmY") . $subscriptionOrderId, $amount_to_charge * 100, $helper->get_iso_code(get_woocommerce_currency()), (bool)$this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
 
-                 if($authorize->authorizeResult)
-                 {
-                         WC_Subscriptions_Manager::process_subscription_payments_on_order($subscriptionOrderId);
-                         update_post_meta($order->id,'Transaction ID', $authorize->transactionid);
-                         $order->payment_complete();
-                 }
-                 else
-                 {
-                     $orderNote = __('Subscription could not be authorized', 'woocommerce-gateway-epay-dk');
-                     if($authorize->epayresponse != "-1")
-                     {
-                         $orderNote .= ' - ' . $webservice->getEpayError($this->merchant, $authorize->epayresponse);;
-                     }
-                     elseif($authorize->pbsresponse != "-1")
-                     {
-                         $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $authorize->epayresponse);
-                     }
+                if($authorize->authorizeResult)
+                {
+                    WC_Subscriptions_Manager::process_subscription_payments_on_order($subscriptionOrderId);
+                    update_post_meta($order->id,'Transaction ID', $authorize->transactionid);
+                    $order->payment_complete();
+                }
+                else
+                {
+                    $orderNote = __('Subscription could not be authorized', 'woocommerce-gateway-epay-dk');
+                    if($authorize->epayresponse != "-1")
+                    {
+                        $orderNote .= ' - ' . $webservice->getEpayError($this->merchant, $authorize->epayresponse);;
+                    }
+                    elseif($authorize->pbsresponse != "-1")
+                    {
+                        $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $authorize->epayresponse);
+                    }
 
-                     $order->add_order_note($orderNote);
-                     WC_Subscriptions_Manager::process_subscription_payment_failure_on_order($subscriptionOrderId);
-                 }
-             }
-             catch(Exception $error)
-             {
-                 $order->add_order_note(__('Subscription could not be authorized', 'woocommerce-gateway-epay-dk'));
-                 WC_Subscriptions_Manager::process_subscription_payment_failure_on_order($subscriptionOrderId);
-             }
-         }
+                    $order->add_order_note($orderNote);
+                    WC_Subscriptions_Manager::process_subscription_payment_failure_on_order($subscriptionOrderId);
+                }
+            }
+            catch(Exception $error)
+            {
+                $order->add_order_note(__('Subscription could not be authorized', 'woocommerce-gateway-epay-dk'));
+                WC_Subscriptions_Manager::process_subscription_payment_failure_on_order($subscriptionOrderId);
+            }
+        }
 
 
         public function get_initial_subscription_id($order)
@@ -741,7 +741,7 @@ function init_wc_epay_dk_gateway()
 					{
 						foreach ($transaction->get_error_messages() as $error)
 						{
-							throw new Exception ($error->get_error_message());
+							echo $error . "\n";
 						}
 					}
 				}
