@@ -1,17 +1,16 @@
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: WooCommerce ePay Payment Solutions Gateway 2.1\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/woocommerce-gateway-epay-dk\n"
-"POT-Creation-Date: 2016-10-14 11:12+0000\n"
+"POT-Creation-Date: 2016-10-17 07:10+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
-"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION\n"
+"PO-Revision-Date: 2016-10-17 07:10+0000\n"
+"Last-Translator: admin <awl@epay.eu>\n"
+"Language-Team: German\n"
+"Language: de-DE\n"
+"Plural-Forms: nplurals=2; plural=n != 1\n"
 "X-Generator: Loco - https://localise.biz/"
 
 #: woocommerce-gateway-epay-dk.php:130
@@ -98,20 +97,8 @@ msgstr ""
 msgid "Documentation can be found here"
 msgstr ""
 
-#: woocommerce-gateway-epay-dk.php:297
-msgid "Pay via ePay"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:298
-msgid "Cancel order &amp; restore cart"
-msgstr ""
-
 #: woocommerce-gateway-epay-dk.php:429 woocommerce-gateway-epay-dk.php:445
 msgid "Subscription could not be authorized"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:478
-msgid "Thank you for your order, please click the button below to pay with ePay."
 msgstr ""
 
 #: woocommerce-gateway-epay-dk.php:524
@@ -130,32 +117,8 @@ msgstr ""
 msgid "Transaction ID"
 msgstr ""
 
-#: woocommerce-gateway-epay-dk.php:664
-msgid "Authorized amount"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:667
-msgid "Captured amount"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:670
-msgid "Credited amount"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:681
-msgid "Capture"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:687
-msgid "Delete"
-msgstr ""
-
 #: woocommerce-gateway-epay-dk.php:697
 msgid "Are you sure you want to credit?"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:698
-msgid "Credit"
 msgstr ""
 
 #: lib/class.epaysoap.php:168 lib/class.epaysoap.php:187
@@ -181,3 +144,42 @@ msgstr ""
 #. Author URI of the plugin
 msgid "http://www.epay.dk/epay-payment-solutions"
 msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:297
+msgid "Pay via ePay"
+msgstr "Mit ePay bezahlen"
+
+#: woocommerce-gateway-epay-dk.php:298
+msgid "Cancel order &amp; restore cart"
+msgstr "Bestellung stornieren"
+
+#: woocommerce-gateway-epay-dk.php:478
+msgid ""
+"Thank you for your order, please click the button below to pay with ePay."
+msgstr ""
+"Danke für Ihre Bestellung. Klicken Sie auf die Taste hierunter, um mit ePay "
+"zu bezahlen."
+
+#: woocommerce-gateway-epay-dk.php:664
+msgid "Authorized amount"
+msgstr "Autorisierter Betrag"
+
+#: woocommerce-gateway-epay-dk.php:667
+msgid "Captured amount"
+msgstr "Abgehobener Betrag"
+
+#: woocommerce-gateway-epay-dk.php:670
+msgid "Credited amount"
+msgstr "Kreditierter betrag"
+
+#: woocommerce-gateway-epay-dk.php:681
+msgid "Capture"
+msgstr "Abheben"
+
+#: woocommerce-gateway-epay-dk.php:687
+msgid "Delete"
+msgstr "Löschen"
+
+#: woocommerce-gateway-epay-dk.php:698
+msgid "Credit"
+msgstr "Kreditieren"
