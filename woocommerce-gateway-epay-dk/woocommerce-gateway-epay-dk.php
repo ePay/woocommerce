@@ -270,7 +270,7 @@ function init_wc_epay_dk_gateway()
 	    /**
          * There are no payment fields for epay, but we want to show the description if set.
          **/
-		function payment_fields()
+		public function payment_fields()
 		{
 			if ($this->description) {
 				echo wpautop(wptexturize($this->description));
@@ -286,8 +286,6 @@ function init_wc_epay_dk_gateway()
 		}
 
 		private function yesnotoint($str)
-
-		function yesnotoint($str)
 		{
             return $str === 'yes' ? 1 : 0;
 		}
@@ -355,7 +353,7 @@ function init_wc_epay_dk_gateway()
 				$epay_args['backgroundcolor'] = str_replace('#', '', $this->backgroundcolor);
 
 				$opacity = intval($this->opacity);
-				if (intval($this->windowstate) == 1 && $opacity >= 0 && $opacity <= 100) {
+				if( $opacity >= 0 && $opacity <= 100 &&  (intval($this->windowstate) === 1) ) {
 					$epay_args['opacity'] = $opacity;
 				}
 			}
@@ -397,7 +395,7 @@ function init_wc_epay_dk_gateway()
 
         private function createInvoice($order)
         {
-            if($this->enableinvoice  == "yes")
+            if($this->yesnotoint($this->enableinvoice))
             {
                 $invoice["customer"]["emailaddress"] = $this->jsonValueRemoveSpecialCharacters($order->billing_email);
                 $invoice["customer"]["firstname"] = $this->jsonValueRemoveSpecialCharacters($order->billing_first_name);
@@ -459,7 +457,7 @@ function init_wc_epay_dk_gateway()
             }
         }
 
-        function jsonValueRemoveSpecialCharacters($value)
+        private function jsonValueRemoveSpecialCharacters($value)
         {
             return preg_replace('/[^\p{Latin}\d ]/u', '', $value);
         }
@@ -515,7 +513,7 @@ function init_wc_epay_dk_gateway()
             return false;
         }
 
-        function scheduled_subscription_payment($amount_to_charge, $order)
+        public function scheduled_subscription_payment($amount_to_charge, $order)
         {
             require_once(epay_LIB . 'class.epaysoap.php');
             require_once(epay_LIB . 'helper.php');
