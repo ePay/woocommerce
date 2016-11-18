@@ -3,17 +3,17 @@
 Plugin Name: WooCommerce ePay Payment Solutions Gateway
 Plugin URI: http://www.epay.dk
 Description: A payment gateway for ePay payment solutions standard (http://www.epay.dk/epay-payment-solutions/).
-Version: 2.5
-Author: ePay - Michael Korsgaard
+Version: 2.6
+Author: ePay
 Author URI: http://www.epay.dk/epay-payment-solutions/
 Text Domain: epay
  */
 
 // https://github.com/ePay/woocommerce
 
-add_action('plugins_loaded', 'add_wc_epay_dk_gateway', 0);
+add_action('plugins_loaded', 'init_wc_epay_dk_gateway');
 
-function add_wc_epay_dk_gateway()
+function init_wc_epay_dk_gateway()
 {
 	if (!class_exists('WC_Payment_Gateway')) {
 		return;
@@ -26,6 +26,26 @@ function add_wc_epay_dk_gateway()
 	 **/
 	class WC_Gateway_EPayDk extends WC_Payment_Gateway
 	{
+        
+        public static $_instance;
+        /**
+         * get_instance
+         *
+         * Returns a new instance of self, if it does not already exist.
+         *
+         * @access public
+         * @static
+         * @return object WC_Gateway_EPayDK
+         */
+		public static function get_instance() {
+			if (!isset( self::$_instance ) ) {
+				self::$_instance = new self();
+			}
+			return self::$_instance;
+		}
+        
+        
+        
 		public function __construct()
 		{
 			global $woocommerce;
@@ -35,7 +55,15 @@ function add_wc_epay_dk_gateway()
 			$this->icon = WP_PLUGIN_URL . '/' . plugin_basename(dirname(__FILE__)) . '/ePay-logo.png';
 			$this->has_fields = false;
 
-			$this->supports = array('subscriptions', 'products', 'subscription_cancellation', 'subscription_reactivation', 'subscription_suspension', 'subscription_amount_changes', 'subscription_date_changes');
+			$this->supports = array(
+					'subscriptions',
+                'products',
+                'subscription_cancellation',
+                'subscription_reactivation',
+                'subscription_suspension',
+                'subscription_amount_changes',
+                'subscription_date_changes'
+                );
 
 			// Load the form fields.
 			$this->init_form_fields();
@@ -295,8 +323,6 @@ function add_wc_epay_dk_gateway()
 		 **/
 		public function generate_epay_form($order_id)
 		{
-			global $woocommerce;
-
 			$order = new WC_Order($order_id);
 
 			$epay_args = array
@@ -309,12 +335,14 @@ function add_wc_epay_dk_gateway()
 				'group' => $this->group,
 				'mailreceipt' => $this->authmail,
 				'ownreceipt' => $this->yesnotoint($this->ownreceipt),
-				'orderid' => str_replace(_x('#', 'hash before order number', 'woocommerce'), '', $order->get_order_number()),
+				'amount' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order ) ? (WC_Subscriptions_Order::get_total_initial_payment($order)*100) : ($order->order_total * 100)) : ($order->order_total * 100),
+				'orderid' => str_replace(_x( '#', 'hash before order number', 'woocommerce'), '', $order->get_order_number()),
 				'currency' => get_woocommerce_currency(),
 				'callbackurl' => $this->fix_url(add_query_arg('wooorderid', $order_id, add_query_arg('wc-api', 'WC_Gateway_EPayDk', $this->get_return_url($order)))),
 				'accepturl' => $this->fix_url($this->get_return_url($order)),
 				'cancelurl' => $this->fix_url($order->get_cancel_order_url()),
 				'language' => $this->get_language_code(get_locale()),
+				'subscription' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order)) ? 1 : 0 : 0
 			);
 
 			// Integration with WooCommerce Subscriptions
