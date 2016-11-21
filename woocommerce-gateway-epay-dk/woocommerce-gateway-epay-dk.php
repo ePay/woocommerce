@@ -9,6 +9,16 @@ Author URI: http://www.epay.dk/epay-payment-solutions
 Text Domain: epay
  */
 
+/*
+Add Bambora Stylesheet and javascript to plugin
+ */
+add_action('admin_enqueue_scripts', 'enqueue_wc_epay_style');
+
+function enqueue_wc_epay_style()
+{
+    wp_enqueue_style('epay_style',  WP_PLUGIN_URL . "/" . plugin_basename(dirname(__FILE__ )) . '/style/epay.css');
+}
+
 add_action('plugins_loaded', 'init_wc_epay_dk_gateway');
 
 function init_wc_epay_dk_gateway()
@@ -80,12 +90,13 @@ function init_wc_epay_dk_gateway()
             $this->enableinvoice = array_key_exists("enableinvoice", $this->settings) ? $this->settings["enableinvoice"] : "no";
             $this->addfeetoorder = array_key_exists("addfeetoorder", $this->settings) ? $this->settings["addfeetoorder"] : "no";
 
+            $this->set_epay_description_for_checkout($this->merchant);
+
             if($this->yesnotoint($this->remoteinterface))
             {
                 $this->supports = array_merge($this->supports, array('refunds'));
             }
 		}
-
 
         function init_hooks()
         {
@@ -193,12 +204,12 @@ function init_wc_epay_dk_gateway()
 							),
 				'remotepassword' => array(
 								'title' => __( 'Remote password', 'woocommerce-gateway-epay-dk'),
-								'type' => 'text',
+								'type' => 'password',
 								'label' => __( 'Remote password', 'woocommerce-gateway-epay-dk')
 							)
 				);
 
-	    } // End init_form_fields()
+	    }
 
 		/**
          * Admin Panel Options
@@ -227,6 +238,21 @@ function init_wc_epay_dk_gateway()
 			if($this->description)
 				echo wpautop(wptexturize($this->description));
 		}
+
+        /**
+         * Set the WC Payment Gateway description for the checkout page
+         */
+        function set_epay_description_for_checkout($merchantnumber)
+        {
+            global $woocommerce;
+            $cart = $woocommerce->cart;
+            if(!$cart || !$merchantnumber)
+            {
+                return;
+            }
+
+            $this->description .= '<span id="epay_card_logos"></span><script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber='.$merchantnumber.'&direction=2&padding=2&rows=1&logo=0&showdivs=0&cardwidth=45&divid=epay_card_logos"></script>';
+        }
 
 		function fix_url($url)
 		{
@@ -258,8 +284,7 @@ function init_wc_epay_dk_gateway()
                 'windowstate' => $this->windowstate,
                 'merchantnumber' => $this->merchant,
 				'windowid' => $this->windowid,
-                'amount' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order ) ? (WC_Subscriptions_Order::get_total_initial_payment($order)*100) : ($order->order_total * 100)) : ($order->order_total * 100),
-                'currency' => get_woocommerce_currency(),
+                'currency' => $order->get_order_currency(),
                 'orderid' => str_replace(_x( '#', 'hash before order number', 'woocommerce'), "", $order->get_order_number()),
                 'accepturl' => $this->fix_url($this->get_return_url($order)),
 				'cancelurl' => $this->fix_url($order->get_cancel_order_url()),
@@ -271,8 +296,25 @@ function init_wc_epay_dk_gateway()
                 'ownreceipt' => $this->yesnotoint($this->ownreceipt),
                 'timeout' => "60",
                 'invoice' => $this->createInvoice($order),
-				'subscription' => (class_exists('WC_Subscriptions_Order')) ? (WC_Subscriptions_Order::order_contains_subscription($order)) ? 1 : 0 : 0
 			);
+
+			// WooCommerce Subscriptions v2+
+			if( is_a($order, 'WC_Subscription') && function_exists('wcs_order_contains_subscription') && wcs_order_contains_subscription($order) ) {
+				$epay_args['subscription'] = 1;
+				$epay_args['amount'] = $order->get_total_initial_payment() * 100;
+			}
+			// deprecated way since Subscriptions v2+
+			else if( class_exists('WC_Subscriptions_Order') && WC_Subscriptions_Order::order_contains_subscription($order) )
+            {
+				$epay_args['subscription'] = 1;
+				$epay_args['amount'] = WC_Subscriptions_Order::get_total_initial_payment($order) * 100;
+			}
+			// not a subscription
+			else
+            {
+				$epay_args['subscription'] = 0;
+				$epay_args['amount'] = $order->get_total() * 100;
+			}
 
 			if(strlen($this->md5key) > 0)
 			{
@@ -309,7 +351,7 @@ function init_wc_epay_dk_gateway()
         {
             if($this->enableinvoice  == "yes")
             {
-                $invoice["customer"]["emailaddress"] = $this->jsonValueRemoveSpecialCharacters($order->billing_email);
+                $invoice["customer"]["emailaddress"] = $order->billing_email;
                 $invoice["customer"]["firstname"] = $this->jsonValueRemoveSpecialCharacters($order->billing_first_name);
                 $invoice["customer"]["lastname"] = $this->jsonValueRemoveSpecialCharacters($order->billing_last_name);
                 $invoice["customer"]["address"] = $this->jsonValueRemoveSpecialCharacters($order->billing_address_1);
@@ -418,8 +460,12 @@ function init_wc_epay_dk_gateway()
             }
             else
             {
+                $error_string = '';
                 foreach($credit->get_error_messages() as $error)
-                    $reason .= $error->get_error_message();
+                {
+                    $error_string .= '"'.$error_string.'" ';
+                }
+                throw new exception($error_string);
             }
 
             return false;
@@ -428,7 +474,7 @@ function init_wc_epay_dk_gateway()
         function scheduled_subscription_payment($amount_to_charge, $order)
         {
             require_once(epay_LIB . 'class.epaysoap.php');
-            require_once(epay_LIB . 'helper.php');
+            require_once(epay_LIB . 'epayhelper.php');
             try
             {
                 $helper = new epayhelper();
@@ -436,8 +482,9 @@ function init_wc_epay_dk_gateway()
                 $subscription = WC_Subscriptions_Manager::get_subscription($key);
                 $subscriptionOrderId = $subscription["order_id"];
                 $subscriptionid = get_post_meta($subscriptionOrderId, 'Subscription ID', true);
+                $orderCurrency = $order->get_order_currency();
                 $webservice = new epaysoap($this->remotepassword, true);
-                $authorize = $webservice->authorize($this->merchant, $subscriptionid, date("dmY") . $subscriptionOrderId, $amount_to_charge * 100, $helper->get_iso_code(get_woocommerce_currency()), (bool)$this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
+                $authorize = $webservice->authorize($this->merchant, $subscriptionid, date("dmY") . $subscriptionOrderId, $amount_to_charge * 100, $helper->get_iso_code($orderCurrency), (bool)$this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
 
                 if($authorize->authorizeResult)
                 {
@@ -468,7 +515,6 @@ function init_wc_epay_dk_gateway()
             }
         }
 
-
         public function get_initial_subscription_id($order)
         {
             $is_subscription = wcs_is_subscription( $order->id );
@@ -489,7 +535,6 @@ function init_wc_epay_dk_gateway()
 
             return null;
         }
-
 
 		/**
          * receipt_page
@@ -561,7 +606,7 @@ function init_wc_epay_dk_gateway()
 				$order->payment_complete();
 
 				update_post_meta((int)$posted["wooorderid"], 'Transaction ID', $posted["txnid"]);
-				update_post_meta((int)$posted["wooorderid"], 'Card no', $posted["cardno"]);
+                update_post_meta((int)$posted["wooorderid"], 'Payment Type ID', $posted["paymenttype"]);
 
 				if(isset($posted["subscriptionid"]))
                 {
@@ -604,8 +649,9 @@ function init_wc_epay_dk_gateway()
 					switch($_GET["epay_action"])
 					{
 						case 'capture':
+                            $amount = str_replace(wc_get_price_decimal_separator(),".",$_GET["amount"]);
 							$webservice = new epaysoap($this->remotepassword);
-							$capture = $webservice->capture($this->merchant, $transactionId, $_GET["amount"] * 100);
+							$capture = $webservice->capture($this->merchant, $transactionId, $amount * 100);
 							if(!is_wp_error($capture))
 							{
 								if($capture)
@@ -613,15 +659,20 @@ function init_wc_epay_dk_gateway()
 							}
 							else
 							{
-								foreach ($capture->get_error_messages() as $error)
-									throw new Exception ($error->get_error_message());
+                                $error_string = '';
+                                foreach($capture->get_error_messages() as $error)
+                                {
+                                    $error_string .= '"'.$error_string.'" ';
+                                }
+                                throw new exception($error_string);
 							}
 
 							break;
 
 						case 'credit':
+                            $amount = str_replace(wc_get_price_decimal_separator(),".",$_GET["amount"]);
 							$webservice = new epaysoap($this->remotepassword);
-							$credit = $webservice->credit($this->merchant, $transactionId, $_GET["amount"] * 100);
+							$credit = $webservice->credit($this->merchant, $transactionId, $amount * 100);
 							if(!is_wp_error($credit))
 							{
 								if($credit)
@@ -629,8 +680,12 @@ function init_wc_epay_dk_gateway()
 							}
 							else
 							{
-								foreach($credit->get_error_messages() as $error)
-									throw new Exception ($error->get_error_message());
+                                $error_string = '';
+                                foreach($credit->get_error_messages() as $error)
+                                {
+                                    $error_string .= '"'.$error_string.'" ';
+                                }
+                                throw new exception($error_string);
 							}
 
 							break;
@@ -645,8 +700,12 @@ function init_wc_epay_dk_gateway()
 							}
 							else
 							{
-								foreach ($delete->get_error_messages() as $error)
-									throw new Exception ($error->get_error_message());
+                                $error_string = '';
+                                foreach($delete->get_error_messages() as $error)
+                                {
+                                    $error_string .= '"'.$error_string.'" ';
+                                }
+                                throw new exception($error_string);
 							}
 
 							break;
@@ -662,10 +721,12 @@ function init_wc_epay_dk_gateway()
 		public function epay_meta_box_payment()
 		{
             require_once (epay_LIB . 'class.epaysoap.php');
+            require_once (epay_LIB . 'epayhelper.php');
 			global $post;
 
 			$order = new WC_Order($post->ID);
             $transactionId = get_post_meta($order->id, 'Transaction ID', true);
+            $paymentTypeId = get_post_meta($order->id, 'Payment Type ID', true);
 
 			if(strlen($transactionId) > 0)
 			{
@@ -676,51 +737,87 @@ function init_wc_epay_dk_gateway()
 
 					if(!is_wp_error($transaction))
 					{
-						echo '<p>';
-						echo '<strong>' . _e('Transaction ID', 'woocommerce-gateway-epay-dk') . ':</strong> ' . $transaction->transactionInformation->transactionid;
-						echo '</p>';
-						echo '<p>';
-						echo '<strong>' . _e('Authorized amount', 'woocommerce-gateway-epay-dk') . ':</strong> ' . $order->get_order_currency() . ' ' . number_format($transaction->transactionInformation->authamount / 100, 2, ".", "");
-						echo '</p>';
-						echo '<p>';
-						echo '<strong>' . _e('Captured amount', 'woocommerce-gateway-epay-dk') . ':</strong> ' . $order->get_order_currency() . ' ' . number_format($transaction->transactionInformation->capturedamount / 100, 2, ".", "");
-						echo '</p>';
-						echo '<p>';
-						echo '<strong>' . _e('Credited amount', 'woocommerce-gateway-epay-dk') . ':</strong> ' . $order->get_order_currency() . ' ' . number_format($transaction->transactionInformation->creditedamount / 100, 2, ".", "");
-						echo '</p>';
+                        echo '<div class="epay-info">';
+                        echo    '<div class="epay-transactionid">';
+                        echo        '<p>';
+                        _e('Transaction ID', 'woocommerce-gateway-epay-dk');
+                        echo        '</p>';
+                        echo        '<p>'.$transaction->transactionInformation->transactionid.'</p>';
+                        echo    '</div>';
+
+                        if(strlen($paymentTypeId) > 0)
+                        {
+                            echo '<div class="epay-paymenttype">';
+                            echo    '<p>';
+                            _e('Payment Type', 'woocommerce-gateway-epay-dk');
+                            echo    '</p>';
+                            echo    '<div class="epay-paymenttype-group">';
+                            echo        '<img src="https://d25dqh6gpkyuw6.cloudfront.net/paymentlogos/external/'. intval($paymentTypeId) . '.png" alt="' . $this->getCardNameById(intval($paymentTypeId)) . '" title="' . $this->getCardNameById(intval($paymentTypeId)) . '"/><div>'.$this->getCardNameById(intval($paymentTypeId));
+                            if(strlen($transaction->transactionInformation->tcardno) > 0)
+                            {
+                                echo '<br/>'. $transaction->transactionInformation->tcardno;
+                            }
+                            echo '</div></div></div>';
+                        }
+
+                        $epayhelper = new epayhelper();
+                        $currencycode = $transaction->transactionInformation->currency;
+                        $currency = $epayhelper->get_iso_code($currencycode, false);
+
+                        echo '<div class="epay-info-overview">';
+                        echo    '<p>';
+                        _e('Authorized amount', 'woocommerce-gateway-epay-dk');
+                        echo    ':</p>';
+                        echo    '<p>'.number_format($transaction->transactionInformation->authamount / 100, 2, wc_get_price_decimal_separator(), ""). ' ' .$currency .'</p>';
+                        echo '</div>';
+
+                        echo '<div class="epay-info-overview">';
+                        echo    '<p>';
+                        _e('Captured amount', 'woocommerce-gateway-epay-dk');
+                        echo    ':</p>';
+                        echo    '<p>'.number_format($transaction->transactionInformation->capturedamount / 100, 2, wc_get_price_decimal_separator(), ""). ' ' .$currency .'</p>';
+                        echo '</div>';
+
+                        echo '<div class="epay-info-overview">';
+                        echo    '<p>';
+                        _e('Credited amount', 'woocommerce-gateway-epay-dk');
+                        echo    ':</p>';
+                        echo    '<p>'.number_format($transaction->transactionInformation->creditedamount / 100, 2, wc_get_price_decimal_separator(), ""). ' ' .$currency .'</p>';
+                        echo '</div>';
+
+                        echo '</div>';
 
 						if($transaction->transactionInformation->status == "PAYMENT_NEW")
 						{
-							echo '<ul>';
-                            echo '<li>';
-                            echo '<p>';
-                            echo $order->get_order_currency() . ' <span><input type="text" value="' . number_format(($transaction->transactionInformation->authamount - $transaction->transactionInformation->capturedamount) / 100, 2, ".", "") . '" id="epay_amount" name="epay_amount" /></span>';
-                            echo '</p>';
-                            echo '<a class="button" onclick="javascript:location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=capture') . '&amount=\' + document.getElementById(\'epay_amount\').value">';
-                            echo _e('Capture', 'woocommerce-gateway-epay-dk');
+                            echo '<div class="epay-input-group">';
+                            echo '<div class="epay-input-group-currency">' .$currency. '</div><input type="text" value="' . number_format(($transaction->transactionInformation->authamount - $transaction->transactionInformation->capturedamount) / 100, 2, wc_get_price_decimal_separator(), "") . '" id="epay_amount" name="epay_amount" />';
+                            echo '</div>';
+                            echo '<div class="epay-action">';
+                            echo '<a class="button capture" onclick="javascript:location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=capture') . '&amount=\' + document.getElementById(\'epay_amount\').value">';
+                            _e('Capture', 'woocommerce-gateway-epay-dk');
                             echo '</a>';
-                            echo '</li>';
-							echo '</ul><br />';
+                            echo '</div>';
+                            if(!$transaction->transactionInformation->capturedamount)
+                            {
+                                echo '<div class="epay-action">';
+                                echo '<a class="button delete"  onclick="javascript: (confirm(\'' . __('Are you sure you want to delete?', 'woocommerce-gateway-epay-dk') . '\') ? (location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=delete') . '\') : (false));">';
+							    _e('Delete', 'woocommerce-gateway-epay-dk');
+							    echo '</a>';
+                                echo '</div>';
+                            }
 
-							echo '<a class="button" href="' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=delete') . '">';
-							echo _e('Delete', 'woocommerce-gateway-epay-dk');
-							echo '</a>';
 						}
 						elseif($transaction->transactionInformation->status == "PAYMENT_CAPTURED" && $transaction->transactionInformation->creditedamount == 0)
 						{
-							echo '<ul>';
-                            echo '<li>';
-                            echo '<p>';
-                            echo $order->get_order_currency() . ' <span><input type="text" value="' . number_format(($transaction->transactionInformation->capturedamount) / 100, 2, ".", "") . '" id="epay_credit_amount" name="epay_credit_amount" /></span>';
-                            echo '</p>';
-                            echo '<a class="button" onclick="javascript: (confirm(\'' . __('Are you sure you want to credit?', 'woocommerce-gateway-epay-dk') . '\') ? (location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=credit') . '&amount=\' + document.getElementById(\'epay_credit_amount\').value) : (false));">';
-                            echo _e('Credit', 'woocommerce-gateway-epay-dk');
+                            echo '<div class="epay-input-group">';
+                            echo '<div class="epay-input-group-currency">' .$currency. '</div><input type="text" value="' . number_format($transaction->transactionInformation->capturedamount / 100, 2, wc_get_price_decimal_separator(), "") . '" id="epay_credit_amount" name="epay_credit_amount" />';
+                            echo '</div>';
+                            echo '<div class="epay-action">';
+                            echo '<a class="button credit" onclick="javascript: (confirm(\'' . __('Are you sure you want to credit?', 'woocommerce-gateway-epay-dk') . '\') ? (location.href=\'' . admin_url('post.php?post=' . $post->ID . '&action=edit&epay_action=credit') . '&amount=\' + document.getElementById(\'epay_credit_amount\').value) : (false));">';
+                            _e('Credit', 'woocommerce-gateway-epay-dk');
                             echo '</a>';
-                            echo '</li>';
-							echo '</ul><br />';
+                            echo '</div>';
 						}
-
-						echo '<br /><br />';
 
 						$historyArray = $transaction->transactionInformation->history->TransactionHistoryInfo;
 
@@ -728,14 +825,24 @@ function init_wc_epay_dk_gateway()
 						{
 							$historyArray = array($transaction->transactionInformation->history->TransactionHistoryInfo);
 						}
-
-						for($i = 0; $i < count($historyArray); $i++)
-						{
-							echo str_replace("T", " ", $historyArray[$i]->created) . ": ";
-							if(strlen($historyArray[$i]->username) > 0)
-								echo ($historyArray[$i]->username . ": ");
-							echo $historyArray[$i]->eventMsg . "<br />";
-						}
+                        if(count($historyArray) > 0)
+                        {
+                            echo '<h4 class="epay-header">';
+                            _e('TRANSACTION HISTORY', 'woocommerce-gateway-epay-dk');
+                            echo '</h4>';
+                            echo '<table class="epay-table">';
+                            for($i = 0; $i < count($historyArray); $i++)
+                            {
+                                echo '<tr class="epay-transaction-date"><td>';
+                                echo str_replace("T", " ", $historyArray[$i]->created);
+                                echo '</td></tr><tr class="epay-transaction"><td>';
+                                if(strlen($historyArray[$i]->username) > 0)
+                                    echo ($historyArray[$i]->username . ": ");
+                                echo $historyArray[$i]->eventMsg;
+                                echo '</td></tr>';
+                            }
+                            echo '</table>';
+                        }
 					}
 					else
 					{
@@ -759,6 +866,75 @@ function init_wc_epay_dk_gateway()
 				<p>'.$message.'</p>
 			</div>';
 		}
+
+        private function getCardNameById($card_id)
+        {
+            switch($card_id)
+            {
+                case 1:
+                    return 'Dankort / VISA/Dankort';
+                case 2:
+                    return 'eDankort';
+                case 3:
+                    return 'VISA / VISA Electron';
+                case 4:
+                    return 'MasterCard';
+                case 6:
+                    return 'JCB';
+                case 7:
+                    return 'Maestro';
+                case 8:
+                    return 'Diners Club';
+                case 9:
+                    return 'American Express';
+                case 10:
+                    return 'ewire';
+                case 11:
+                    return 'Forbrugsforeningen';
+                case 12:
+                    return 'Nordea e-betaling';
+                case 13:
+                    return 'Danske Netbetalinger';
+                case 14:
+                    return 'PayPal';
+                case 16:
+                    return 'MobilPenge';
+                case 17:
+                    return 'Klarna';
+                case 18:
+                    return 'Svea';
+                case 19:
+                    return 'SEB';
+                case 20:
+                    return 'Nordea';
+                case 21:
+                    return 'Handelsbanken';
+                case 22:
+                    return 'Swedbank';
+                case 23:
+                    return 'ViaBill';
+                case 24:
+                    return 'Beeptify';
+                case 25:
+                    return 'iDEAL';
+                case 26:
+                    return 'Gavekort';
+                case 27:
+                    return 'Paii';
+                case 28:
+                    return 'Brandts Gavekort';
+                case 29:
+                    return 'MobilePay Online';
+                case 30:
+                    return 'Resurs Bank';
+                case 31:
+                    return 'Ekspres Bank';
+                case 32:
+                    return 'Swipp';
+            }
+
+            return 'Unknown';
+        }
 	}
 
 	add_filter('woocommerce_payment_gateways', 'add_epay_dk_gateway');
