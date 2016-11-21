@@ -6,8 +6,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2016-10-14 11:11+0000\n"
-"Last-Translator: admin <awl@epay.eu>\n"
+"PO-Revision-Date: 2016-11-21 10:30+0000\n"
+"Last-Translator: Bambora <soren.larsen@bambora.com>\n"
 "Language-Team: Danish\n"
 "X-Generator: Loco - https://localise.biz/\n"
 "Language: da-DK\n"
@@ -27,7 +27,7 @@ msgstr ""
 
 #: woocommerce-gateway-epay-dk.php:146
 msgid "How to open the ePay Payment Window"
-msgstr ""
+msgstr "Hvordan skal ePay betalingsvinduet åbnes"
 
 #: woocommerce-gateway-epay-dk.php:150
 msgid "MD5 Key"
@@ -35,7 +35,7 @@ msgstr ""
 
 #: woocommerce-gateway-epay-dk.php:152
 msgid "Your md5 key"
-msgstr ""
+msgstr "Din md5 key"
 
 #: woocommerce-gateway-epay-dk.php:155
 msgid "Instant capture"
@@ -43,7 +43,7 @@ msgstr ""
 
 #: woocommerce-gateway-epay-dk.php:157
 msgid "Enable instant capture"
-msgstr ""
+msgstr "Aktivér instant capture"
 
 #: woocommerce-gateway-epay-dk.php:161
 msgid "Group"
@@ -55,19 +55,19 @@ msgstr ""
 
 #: woocommerce-gateway-epay-dk.php:169
 msgid "Own receipt"
-msgstr ""
+msgstr "Egen kvittering"
 
 #: woocommerce-gateway-epay-dk.php:171
 msgid "Enable own receipt"
-msgstr ""
+msgstr "Aktivér egen kvittering"
 
 #: woocommerce-gateway-epay-dk.php:175
 msgid "Add fee to order"
-msgstr ""
+msgstr "Tilføj gebyr til ordre"
 
 #: woocommerce-gateway-epay-dk.php:177
 msgid "Add transaction fee to the order"
-msgstr ""
+msgstr "Tilføj betalingsgebyr til ordren"
 
 #: woocommerce-gateway-epay-dk.php:181
 msgid "Invoice data"
@@ -75,7 +75,7 @@ msgstr ""
 
 #: woocommerce-gateway-epay-dk.php:183
 msgid "Enable invoice data"
-msgstr ""
+msgstr "Aktivér invoice data"
 
 #: woocommerce-gateway-epay-dk.php:187
 msgid "Remote interface"
@@ -83,7 +83,7 @@ msgstr ""
 
 #: woocommerce-gateway-epay-dk.php:189
 msgid "Use remote interface"
-msgstr ""
+msgstr "Brug remote interface"
 
 #: woocommerce-gateway-epay-dk.php:193 woocommerce-gateway-epay-dk.php:195
 msgid "Remote password"
@@ -91,19 +91,19 @@ msgstr ""
 
 #: woocommerce-gateway-epay-dk.php:213
 msgid "Documentation can be found here"
-msgstr ""
+msgstr "Dokumentation kan findes her"
 
 #: woocommerce-gateway-epay-dk.php:429 woocommerce-gateway-epay-dk.php:445
 msgid "Subscription could not be authorized"
-msgstr ""
+msgstr "Abonnementsbetaling kunne ikke autoriseres"
 
 #: woocommerce-gateway-epay-dk.php:524
 msgid "Callback completed"
-msgstr ""
+msgstr "Callback fuldendt"
 
 #: woocommerce-gateway-epay-dk.php:530
 msgid "Fee"
-msgstr ""
+msgstr "Gebyr"
 
 #: woocommerce-gateway-epay-dk.php:564
 msgid "ePay Payment Solutions"
@@ -111,15 +111,15 @@ msgstr ""
 
 #: woocommerce-gateway-epay-dk.php:661
 msgid "Transaction ID"
-msgstr ""
+msgstr "Transaktions ID"
 
 #: woocommerce-gateway-epay-dk.php:697
 msgid "Are you sure you want to credit?"
-msgstr ""
+msgstr "Er du sikker på du vil kreditere?"
 
 #: lib/class.epaysoap.php:187
 msgid "An unknown error occured"
-msgstr ""
+msgstr "Der skete en ukendt fejl"
 
 #. Plugin Name of the plugin/theme
 msgid "WooCommerce ePay Payment Solutions Gateway"
@@ -154,7 +154,8 @@ msgid "Cancel order &amp; restore cart"
 msgstr "Annullér order"
 
 #: woocommerce-gateway-epay-dk.php:478
-msgid "Thank you for your order, please click the button below to pay with ePay."
+msgid ""
+"Thank you for your order, please click the button below to pay with ePay."
 msgstr "Tak for din order. Klik på knappen herunder for at betale med ePay."
 
 #: woocommerce-gateway-epay-dk.php:664
