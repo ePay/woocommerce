@@ -7,6 +7,7 @@ Version: 2.6.4
 Author: ePay
 Author URI: http://www.epay.dk/epay-payment-solutions
 Text Domain: epay
+GitHub Plugin URI: https://github.com/ePay/woocommerce
  */
 
 /*
@@ -89,6 +90,11 @@ function init_wc_epay_dk_gateway()
 			$this->remotepassword = $this->settings["remotepassword"];
             $this->enableinvoice = array_key_exists("enableinvoice", $this->settings) ? $this->settings["enableinvoice"] : "no";
             $this->addfeetoorder = array_key_exists("addfeetoorder", $this->settings) ? $this->settings["addfeetoorder"] : "no";
+			$this->cssurl = $this->settings['cssurl'];
+			$this->mobilecssurl = $this->settings['mobilecssurl'];
+			$this->backgroundcolor = $this->settings['backgroundcolor'];
+			$this->opacity = $this->settings['opacity'];
+			$this->googletracker = $this->settings['googletracker'];
 
             $this->set_epay_description_for_checkout($this->merchant);
 
@@ -105,7 +111,7 @@ function init_wc_epay_dk_gateway()
 
             if(is_admin())
             {
-                if($this->remoteinterface == "yes")
+                if($this->yesnotoint($this->remoteinterface))
                 {
 				    add_action( 'add_meta_boxes', array( $this, 'epay_meta_boxes'));
 				}
@@ -206,10 +212,52 @@ function init_wc_epay_dk_gateway()
 								'title' => __( 'Remote password', 'woocommerce-gateway-epay-dk'),
 								'type' => 'password',
 								'label' => __( 'Remote password', 'woocommerce-gateway-epay-dk')
+							),
+			    'cssurl' => array(
+								'title' => __('Custom css', 'woocommerce-gateway-epay-dk'),
+								'type' => 'text',
+								'label' => __('Url to custom css file', 'woocommerce-gateway-epay-dk'),
+								'default' => 'http://'
+							),
+							'mobilecssurl' => array(
+								'title' => __('Custom mobile css', 'woocommerce-gateway-epay-dk'),
+								'type' => 'text',
+								'label' => __('Url to custom css file for mobile', 'woocommerce-gateway-epay-dk'),
+								'default' => 'http://'
+							),
+				'backgroundcolor' => array(
+								'title' => __('Background color', 'woocommerce-gateway-epay-dk'),
+								'type' => 'color',
+								'label' => __('Background color for payment window', 'woocommerce-gateway-epay-dk'),
+								'default' => '#ffffff',
+							),
+				'opacity' => array(
+								'title' => __('Opacity', 'woocommerce-gateway-epay-dk'),
+								'type' => 'number',
+								'label' => __('Affect background color when windowstate is set to 1, enter a value between 0 to 100', 'woocommerce-gateway-epay-dk'),
+								'default' => '0'
+							),
+				'googletracker' => array(
+								'title' => __('Google tracker', 'woocommerce-gateway-epay-dk'),
+								'type' => 'text',
+								'label' => __('Enter id (UA-XXXXX-X) and configure "cross domain auto linking" in Google Analytics', 'woocommerce-gateway-epay-dk'),
+								'default' => $this->get_default_google_tracker_id()
 							)
 				);
 
 	    }
+
+		/**
+		 * Get default tracking id from google-analytics-for-wordpress plugin from MonsterInsights, previously Yoast
+		 */
+		private function get_default_google_tracker_id()
+		{
+			if (class_exists('Yoast_GA_Options')) {
+				$yoast_options = Yoast_GA_Options::instance();
+				return $yoast_options->get_tracking_code();
+			}
+			return '';
+		}
 
 		/**
          * Admin Panel Options
@@ -233,7 +281,7 @@ function init_wc_epay_dk_gateway()
 	    /**
          * There are no payment fields for epay, but we want to show the description if set.
          **/
-		function payment_fields()
+		public function payment_fields()
 		{
 			if($this->description)
 				echo wpautop(wptexturize($this->description));
@@ -254,7 +302,7 @@ function init_wc_epay_dk_gateway()
             $this->description .= '<span id="epay_card_logos"></span><script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber='.$merchantnumber.'&direction=2&padding=2&rows=1&logo=0&showdivs=0&cardwidth=45&divid=epay_card_logos"></script>';
         }
 
-		function fix_url($url)
+		private function fix_url($url)
 		{
 			$url = str_replace('&#038;', '&amp;', $url);
 			$url = str_replace('&amp;', '&', $url);
@@ -262,9 +310,28 @@ function init_wc_epay_dk_gateway()
 			return $url;
 		}
 
-		function yesnotoint($str)
+		private function yesnotoint($str)
 		{
             return $str === 'yes' ? 1 : 0;
+		}
+
+
+		private function is_analytics($str)
+		{
+			// borrowed from https://gist.github.com/faisalman/924970
+			return preg_match('/^ua-\d{4,9}-\d{1,4}$/i', strval($str)) ? true : false;
+		}
+
+		private function is_hex_color($str)
+		{
+			// borrowed from http://stackoverflow.com/questions/12837942/regex-for-matching-css-hex-colors
+			return preg_match('/^#([a-fA-F0-9]{3}){1,2}\b/', strval($str)) ? true : false;
+		}
+
+		protected function is_url($str)
+		{
+			// borrowed from http://code.tutsplus.com/tutorials/8-regular-expressions-you-should-know--net-6149
+			return preg_match('/^http(s)?:\/\/([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i', strval($str)) ? true : false;
 		}
 
 		/**
@@ -316,6 +383,26 @@ function init_wc_epay_dk_gateway()
 				$epay_args['amount'] = $order->get_total() * 100;
 			}
 
+			if ($this->is_url($this->cssurl)) {
+				$epay_args['cssurl'] = $this->cssurl;
+			}
+			if ($this->is_url($this->mobilecssurl)) {
+				$epay_args['mobilecssurl'] = $this->mobilecssurl;
+			}
+
+			if ($this->is_hex_color($this->backgroundcolor)) {
+				$epay_args['backgroundcolor'] = str_replace('#', '', $this->backgroundcolor);
+
+				$opacity = intval($this->opacity);
+				if( $opacity >= 0 && $opacity <= 100 &&  (intval($this->windowstate) === 1) ) {
+					$epay_args['opacity'] = $opacity;
+				}
+			}
+
+			if ($this->is_analytics($this->googletracker)) {
+				$epay_args['googletracker'] = $this->googletracker;
+			}
+
 			if(strlen($this->md5key) > 0)
 			{
 				$hash = "";
@@ -349,7 +436,7 @@ function init_wc_epay_dk_gateway()
 
         private function createInvoice($order)
         {
-            if($this->enableinvoice  == "yes")
+            if($this->yesnotoint($this->enableinvoice))
             {
                 $invoice["customer"]["emailaddress"] = $order->billing_email;
                 $invoice["customer"]["firstname"] = $this->jsonValueRemoveSpecialCharacters($order->billing_first_name);
@@ -411,7 +498,7 @@ function init_wc_epay_dk_gateway()
             }
         }
 
-        function jsonValueRemoveSpecialCharacters($value)
+        private function jsonValueRemoveSpecialCharacters($value)
         {
             return preg_replace('/[^\p{Latin}\d ]/u', '', $value);
         }
@@ -432,9 +519,9 @@ function init_wc_epay_dk_gateway()
 
 
 		/**
-         * Process the payment and return the result
-         **/
-		function process_payment($order_id)
+		 * Process the payment and return the result
+		 **/
+		public function process_payment($order_id)
 		{
 			$order = new WC_Order($order_id);
 
@@ -444,9 +531,9 @@ function init_wc_epay_dk_gateway()
 			);
 		}
 
-        function process_refund($order_id, $amount = null, $reason = '')
-        {
-            require_once(epay_LIB . 'class.epaysoap.php');
+		public function process_refund($order_id, $amount = null, $reason = '')
+		{
+			require_once(epay_LIB . 'class.epaysoap.php');
 
             $order = new WC_Order($order_id);
             $transactionId = get_post_meta($order->id, 'Transaction ID', true);
@@ -471,7 +558,7 @@ function init_wc_epay_dk_gateway()
             return false;
         }
 
-        function scheduled_subscription_payment($amount_to_charge, $order)
+        public function scheduled_subscription_payment($amount_to_charge, $order)
         {
             require_once(epay_LIB . 'class.epaysoap.php');
             require_once(epay_LIB . 'epayhelper.php');
@@ -537,27 +624,29 @@ function init_wc_epay_dk_gateway()
         }
 
 		/**
-         * receipt_page
-         **/
-		function receipt_page( $order )
+		 * receipt_page
+		 **/
+		public function receipt_page($order)
 		{
-			echo '<p>' . __("Thank you for your order, please click the button below to pay with ePay.", "woocommerce-gateway-epay-dk") . '</p>';
+			do_action('epay_woocommerce_before_output_receipt_page');
+			echo apply_filters('epay_woocommerce_thank_message', '<p>' . __("Thank you for your order, please click the button below to pay with ePay.', 'woocommerce-gateway-epay-dk") . '</p>');
 			echo $this->generate_epay_form($order);
+			do_action('epay_woocommerce_after_output_receipt_page');
 		}
 
 		/**
-         * Check for epay IPN Response
-         **/
-		function check_callback()
+		 * Check for epay IPN Response
+		 **/
+		public function check_callback()
 		{
 			$_GET = stripslashes_deep($_GET);
 			do_action("valid-epay-callback", $_GET);
 		}
 
 		/**
-         * Successful Payment!
-         **/
-		function successful_request( $posted )
+		 * Successful Payment!
+		 **/
+		public function successful_request($posted)
 		{
 			$order = new WC_Order((int)$posted["wooorderid"]);
             $psbReference = get_post_meta((int)$posted["wooorderid"],'Transaction ID',true);
@@ -589,7 +678,7 @@ function init_wc_epay_dk_gateway()
 				// Payment completed
 				$order->add_order_note(__('Callback completed', 'woocommerce-gateway-epay-dk'));
 
-                if($this->addfeetoorder == "yes")
+                if($this->yesnotoint($this->addfeetoorder))
                 {
                     $order_fee              = new stdClass();
                     $order_fee->id          = 'epay_fee';
