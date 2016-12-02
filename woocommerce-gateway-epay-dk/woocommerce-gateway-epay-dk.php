@@ -254,13 +254,36 @@ function init_wc_epay_dk_gateway()
             $this->description .= '<span id="epay_card_logos"></span><script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber='.$merchantnumber.'&direction=2&padding=2&rows=1&logo=0&showdivs=0&cardwidth=45&divid=epay_card_logos"></script>';
         }
 
-		function fix_url($url)
+		public function fix_url($url)
 		{
 			$url = str_replace('&#038;', '&amp;', $url);
 			$url = str_replace('&amp;', '&', $url);
 
 			return $url;
 		}
+
+        public function getAcceptUrl($order)
+        {
+            $url = $this->get_return_url($order);
+            $cleanUrl = $this->fix_url($url);
+            return $cleanUrl;
+        }
+
+        public function getCancelUrl($order)
+        {
+            $url = $order->get_cancel_order_url();
+            $cleanUrl = $this->fix_url($url);
+            return $cleanUrl;
+        }
+
+        public function getCallbackUrl($order_id, $order)
+        {
+            $url = add_query_arg('wooorderid', $order_id, add_query_arg ('wc-api', 'WC_Gateway_EPayDk', $this->get_return_url($order)));
+            $cleanUrl = $this->fix_url($url);
+            return $cleanUrl;
+        }
+
+
 
 		function yesnotoint($str)
 		{
@@ -286,9 +309,9 @@ function init_wc_epay_dk_gateway()
 				'windowid' => $this->windowid,
                 'currency' => $order->get_order_currency(),
                 'orderid' => str_replace(_x( '#', 'hash before order number', 'woocommerce'), "", $order->get_order_number()),
-                'accepturl' => $this->fix_url($this->get_return_url($order)),
-				'cancelurl' => $this->fix_url($order->get_cancel_order_url()),
-                'callbackurl' => $this->fix_url(add_query_arg ('wooorderid', $order_id, add_query_arg ('wc-api', 'WC_Gateway_EPayDk', $this->get_return_url( $order )))),
+                'accepturl' => $this->getAcceptUrl($order),
+				'cancelurl' => $this->getCancelUrl($order),
+                'callbackurl' => $this->getCallbackUrl($order_id, $order),
                 'mailreceipt' => $this->authmail,
                 'instantcapture' => $this->yesnotoint($this->instantcapture),
                 'group' => $this->group,
