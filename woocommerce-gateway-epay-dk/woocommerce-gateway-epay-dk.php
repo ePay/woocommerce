@@ -648,14 +648,21 @@ function init_wc_epay_dk_gateway()
 
 		public function epay_meta_boxes()
 		{
-			add_meta_box(
-				'epay-payment-actions',
-				__('ePay Payment Solutions', 'woocommerce-gateway-epay-dk'),
-				array(&$this, 'epay_meta_box_payment'),
-				'shop_order',
-				'side',
-				'high'
-			);
+            global $post;
+            $orderId = $post->ID;
+
+            $paymentMethod = get_post_meta( $orderId, '_payment_method', true );
+            if($this->id === $paymentMethod)
+            {
+                add_meta_box(
+                    'epay-payment-actions',
+                    __('ePay Payment Solutions', 'woocommerce-gateway-epay-dk'),
+                    array(&$this, 'epay_meta_box_payment'),
+                    'shop_order',
+                    'side',
+                    'high'
+                );
+            }
 		}
 
 		public function epay_action()
