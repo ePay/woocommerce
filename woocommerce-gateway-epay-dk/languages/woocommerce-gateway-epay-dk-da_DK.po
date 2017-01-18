@@ -1,183 +1,151 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce ePay Payment Solutions Gateway 2.1\n"
-"Report-Msgid-Bugs-To: http://wordpress.org/tag/woocommerce-gateway-epay-dk\n"
-"POT-Creation-Date: 2016-10-14 11:11+0000\n"
+"Project-Id-Version: WooCommerce ePay Payment Solutions Gateway\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-01-18 12:06+0000\n"
+"PO-Revision-Date: 2017-01-18 12:22+0000\n"
+"Last-Translator: admin <allan.wamming.lie@bambora.com>\n"
+"Language-Team: Danish\n"
+"Language: da-DK\n"
+"Plural-Forms: nplurals=2; plural=n != 1\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2016-11-21 10:30+0000\n"
-"Last-Translator: Bambora <soren.larsen@bambora.com>\n"
-"Language-Team: Danish\n"
-"X-Generator: Loco - https://localise.biz/\n"
-"Language: da-DK\n"
-"Plural-Forms: nplurals=2; plural=n != 1"
+"X-Generator: Loco - https://localise.biz/"
 
-#: woocommerce-gateway-epay-dk.php:133
-msgid "Merchant number"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:138
-msgid "Window ID"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:143
-msgid "Window state"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:146
-msgid "How to open the ePay Payment Window"
-msgstr "Hvordan skal ePay betalingsvinduet åbnes"
-
-#: woocommerce-gateway-epay-dk.php:150
-msgid "MD5 Key"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:152
-msgid "Your md5 key"
-msgstr "Din md5 key"
-
-#: woocommerce-gateway-epay-dk.php:155
-msgid "Instant capture"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:157
-msgid "Enable instant capture"
-msgstr "Aktivér instant capture"
-
-#: woocommerce-gateway-epay-dk.php:161
-msgid "Group"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:165
-msgid "Auth Mail"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:169
-msgid "Own receipt"
-msgstr "Egen kvittering"
-
-#: woocommerce-gateway-epay-dk.php:171
-msgid "Enable own receipt"
-msgstr "Aktivér egen kvittering"
-
-#: woocommerce-gateway-epay-dk.php:175
-msgid "Add fee to order"
-msgstr "Tilføj gebyr til ordre"
-
-#: woocommerce-gateway-epay-dk.php:177
-msgid "Add transaction fee to the order"
-msgstr "Tilføj betalingsgebyr til ordren"
-
-#: woocommerce-gateway-epay-dk.php:181
-msgid "Invoice data"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:183
-msgid "Enable invoice data"
-msgstr "Aktivér invoice data"
-
-#: woocommerce-gateway-epay-dk.php:187
-msgid "Remote interface"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:189
-msgid "Use remote interface"
-msgstr "Brug remote interface"
-
-#: woocommerce-gateway-epay-dk.php:193 woocommerce-gateway-epay-dk.php:195
-msgid "Remote password"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:213
-msgid "Documentation can be found here"
-msgstr "Dokumentation kan findes her"
-
-#: woocommerce-gateway-epay-dk.php:429 woocommerce-gateway-epay-dk.php:445
-msgid "Subscription could not be authorized"
-msgstr "Abonnementsbetaling kunne ikke autoriseres"
-
-#: woocommerce-gateway-epay-dk.php:524
-msgid "Callback completed"
-msgstr "Callback fuldendt"
-
-#: woocommerce-gateway-epay-dk.php:530
-msgid "Fee"
-msgstr "Gebyr"
-
-#: woocommerce-gateway-epay-dk.php:564
+#: woocommerce-gateway-epay-dk.php:82 woocommerce-gateway-epay-dk.php:681
 msgid "ePay Payment Solutions"
-msgstr ""
+msgstr "ePay Betalings Løsninger"
 
-#: woocommerce-gateway-epay-dk.php:661
-msgid "Transaction ID"
-msgstr "Transaktions ID"
-
-#: woocommerce-gateway-epay-dk.php:697
-msgid "Are you sure you want to credit?"
-msgstr "Er du sikker på du vil kreditere?"
-
-#: lib/class.epaysoap.php:187
-msgid "An unknown error occured"
-msgstr "Der skete en ukendt fejl"
-
-#. Plugin Name of the plugin/theme
-msgid "WooCommerce ePay Payment Solutions Gateway"
-msgstr ""
-
-#. Description of the plugin
-msgid "A payment gateway for ePay payment solutions standard"
-msgstr ""
-
-#. Plugin URI of the plugin/theme
-msgid "http://www.epay.dk"
-msgstr ""
-
-#. Author of the plugin
-msgid "ePay"
-msgstr ""
-
-#. Author URI of the plugin
-msgid "http://www.epay.dk/epay-payment-solutions"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:130
+#: woocommerce-gateway-epay-dk.php:83
 msgid "Pay using ePay Payment Solutions"
 msgstr "Betal via ePay Payment Solutions"
 
-#: woocommerce-gateway-epay-dk.php:297
+#: woocommerce-gateway-epay-dk.php:239
+msgid "Documentation can be found here"
+msgstr "Dokumentation kan findes her"
+
+#: woocommerce-gateway-epay-dk.php:346
 msgid "Pay via ePay"
 msgstr "Betal med ePay"
 
-#: woocommerce-gateway-epay-dk.php:298
+#: woocommerce-gateway-epay-dk.php:347
 msgid "Cancel order &amp; restore cart"
 msgstr "Annullér order"
 
-#: woocommerce-gateway-epay-dk.php:478
+#: woocommerce-gateway-epay-dk.php:464 woocommerce-gateway-epay-dk.php:736
+msgid "Credit action failed"
+msgstr "Refunderings handlingen fejlede"
+
+#: woocommerce-gateway-epay-dk.php:513
+msgid "Subscription could not be authorized"
+msgstr "Abonnementsbetaling kunne ikke autoriseres"
+
+#: woocommerce-gateway-epay-dk.php:528
+msgid "No subscription found"
+msgstr "Ingen abonnements betalinger fundet"
+
+#: woocommerce-gateway-epay-dk.php:548
+msgid "Bambora Subscription ID was not found"
+msgstr "Bambora abonnements id blev ikke fundet"
+
+#: woocommerce-gateway-epay-dk.php:554
+msgid "Subscription successfully Canceled."
+msgstr "Abonnementet er nu annulleret"
+
+#: woocommerce-gateway-epay-dk.php:558
+msgid "Subscription could not be canceled"
+msgstr "Abonnementet kunne ikke annulleres"
+
+#: woocommerce-gateway-epay-dk.php:583
 msgid ""
 "Thank you for your order, please click the button below to pay with ePay."
 msgstr "Tak for din order. Klik på knappen herunder for at betale med ePay."
 
-#: woocommerce-gateway-epay-dk.php:664
+#: woocommerce-gateway-epay-dk.php:632
+msgid "Callback completed"
+msgstr "Callback fuldendt"
+
+#: woocommerce-gateway-epay-dk.php:638
+msgid "Fee"
+msgstr "Gebyr"
+
+#: woocommerce-gateway-epay-dk.php:711
+msgid "Capture action failed"
+msgstr "Hævningen fejlede"
+
+#: woocommerce-gateway-epay-dk.php:760
+msgid "Delete action failed"
+msgstr "Sletningen fejlede"
+
+#: woocommerce-gateway-epay-dk.php:833
+msgid "Transaction ID"
+msgstr "Transaktions id"
+
+#: woocommerce-gateway-epay-dk.php:842
+msgid "Payment Type"
+msgstr "betalings type"
+
+#: woocommerce-gateway-epay-dk.php:860
 msgid "Authorized amount"
 msgstr "Autoriseret beløb"
 
-#: woocommerce-gateway-epay-dk.php:667
+#: woocommerce-gateway-epay-dk.php:867
 msgid "Captured amount"
 msgstr "Hævet beløb"
 
-#: woocommerce-gateway-epay-dk.php:670
+#: woocommerce-gateway-epay-dk.php:874
 msgid "Credited amount"
 msgstr "Krediteret beløb"
 
-#: woocommerce-gateway-epay-dk.php:681
+#: woocommerce-gateway-epay-dk.php:888
 msgid "Capture"
 msgstr "Hæv"
 
-#: woocommerce-gateway-epay-dk.php:687
+#: woocommerce-gateway-epay-dk.php:894
+msgid "Are you sure you want to delete?"
+msgstr "Er du sikker på at du vil slette ordren"
+
+#: woocommerce-gateway-epay-dk.php:895
 msgid "Delete"
 msgstr "Slet"
 
-#: woocommerce-gateway-epay-dk.php:698
+#: woocommerce-gateway-epay-dk.php:907
+msgid "Are you sure you want to credit?"
+msgstr "Er du sikke på at du vil krediter ordren"
+
+#: woocommerce-gateway-epay-dk.php:908
 msgid "Credit"
-msgstr "Kreditér"
+msgstr "Krediter"
+
+#: woocommerce-gateway-epay-dk.php:922
+msgid "TRANSACTION HISTORY"
+msgstr "Transaktions historik"
+
+#: woocommerce-gateway-epay-dk.php:940
+msgid "Get Transaction action failed"
+msgstr "Visning af transaktionen fejlede"
+
+#: woocommerce-gateway-epay-dk.php:960
+msgid "No transaction was found."
+msgstr "Ingen transaktion er fundet"
+
+#. Name of the plugin
+msgid "WooCommerce ePay Payment Solutions Gateway"
+msgstr "WooCommerce ePay betalings løsninger"
+
+#. Description of the plugin
+msgid "A payment gateway for ePay payment solutions standard"
+msgstr "En betalings gateway for ePay betalings løsninger"
+
+#. URI of the plugin
+msgid "http://www.epay.dk"
+msgstr "http://www.epay.dk"
+
+#. Author of the plugin
+msgid "ePay"
+msgstr "ePay"
+
+#. Author URI of the plugin
+msgid "http://www.epay.dk/epay-payment-solutions"
+msgstr "http://www.epay.dk/epay-payment-solutions"

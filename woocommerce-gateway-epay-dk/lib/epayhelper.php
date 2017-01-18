@@ -1,36 +1,31 @@
 <?php
 
-class epayhelper
+class EpayHelper
 {
 
-    public function get_language_code($locale)
+    public static function get_language_code($locale = null)
     {
-        switch($locale)
+        if(!isset($locale))
         {
-            case "da_DK":
-                return "1";
-            case "de_CH":
-                return "7";
-            case "de_DE":
-                return "7";
-            case "en_AU":
-                return "2";
-            case "en_GB":
-                return "2";
-            case "en_NZ":
-                return "2";
-            case "en_US":
-                return "2";
-            case "sv_SE":
-                return "3";
-            case "nn_NO":
-                return "4";
+            $locale = get_locale();
         }
 
-        return "0";
+        $languageArray = array(
+            'da_DK' => '1',
+            'de_CH' => '7',
+            'de_DE' => '7',
+            'en_AU' => '2',
+            'en_GB' => '2',
+            'en_NZ' => '2',
+            'en_US' => '2',
+            'sv_SE' => '3',
+            'nn_NO' => '4',
+            );
+
+        return key_exists($locale, $languageArray) ? $languageArray[$locale] : '2';
     }
 
-    public function get_iso_code($code, $isKey = true)
+    public static function get_iso_code($code, $isKey = true)
     {
         $isoCodeArray = array(
          'ADP' => '020', 'AED' => '784', 'AFA' => '004', 'ALL' => '008', 'AMD' => '051', 'ANG' => '532',
@@ -71,5 +66,60 @@ class epayhelper
         return array_search(strtoupper($code), $isoCodeArray);
     }
 
+    /**
+     * Convert an amount to minorunits
+     *
+     * @param $amount
+     * @param $minorUnits
+     * @param $defaultMinorUnits = 2
+     * @return int
+     */
+    public static function convertPriceToMinorUnits($amount, $minorUnits)
+    {
+        if($amount == "" || $amount == null)
+        {
+            return 0;
+        }
+
+        return $amount * pow(10, $minorUnits);
+    }
+
+    /**
+     * Convert an amount from minorunits
+     *
+     * @param $amount
+     * @param $minorUnits
+     * @param $defaultMinorUnits = 2
+     * @return string
+     */
+    public static function convertPriceFromMinorUnits($amount, $minorUnits, $decimalSeperator = '.')
+    {
+        if($amount == "" || $amount == null)
+        {
+            return 0;
+        }
+
+        return number_format($amount / pow(10, $minorUnits), $minorUnits, $decimalSeperator, "");
+    }
+
+    /**
+     * Return minorunits based on Currency Code
+     *
+     * @param $currencyCode
+     * @return int
+     */
+    public static function getCurrencyMinorunits($currencyCode)
+    {
+        $currencyArray = array(
+        'TTD' => 0, 'KMF' => 0, 'ADP' => 0, 'TPE' => 0, 'BIF' => 0,
+        'DJF' => 0, 'MGF' => 0, 'XPF' => 0, 'GNF' => 0, 'BYR' => 0,
+        'PYG' => 0, 'JPY' => 0, 'CLP' => 0, 'XAF' => 0, 'TRL' => 0,
+        'VUV' => 0, 'CLF' => 0, 'KRW' => 0, 'XOF' => 0, 'RWF' => 0,
+        'IQD' => 3, 'TND' => 3, 'BHD' => 3, 'JOD' => 3, 'OMR' => 3,
+        'KWD' => 3, 'LYD' => 3);
+
+
+        return key_exists($currencyCode, $currencyArray) ? $currencyArray[$currencyCode] : 2;
+    }
 
 }

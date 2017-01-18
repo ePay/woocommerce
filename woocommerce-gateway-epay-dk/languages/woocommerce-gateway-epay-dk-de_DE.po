@@ -2,127 +2,95 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WooCommerce ePay Payment Solutions Gateway 2.1\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/woocommerce-gateway-epay-dk\n"
-"POT-Creation-Date: 2016-10-17 07:10+0000\n"
+"POT-Creation-Date: 2017-01-18 12:25+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2016-10-17 07:10+0000\n"
-"Last-Translator: admin <awl@epay.eu>\n"
+"PO-Revision-Date: 2017-01-18 12:25+0000\n"
+"Last-Translator: admin <allan.wamming.lie@bambora.com>\n"
 "Language-Team: German\n"
 "Language: de-DE\n"
 "Plural-Forms: nplurals=2; plural=n != 1\n"
 "X-Generator: Loco - https://localise.biz/"
 
-#: woocommerce-gateway-epay-dk.php:130
-msgid "Pay using ePay Payment Solutions"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:133
-msgid "Merchant number"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:138
-msgid "Window ID"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:143
-msgid "Window state"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:146
-msgid "How to open the ePay Payment Window"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:150
-msgid "MD5 Key"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:152
-msgid "Your md5 key"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:155
-msgid "Instant capture"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:157
-msgid "Enable instant capture"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:161
-msgid "Group"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:165
-msgid "Auth Mail"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:169
-msgid "Own receipt"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:171
-msgid "Enable own receipt"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:175
-msgid "Add fee to order"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:177
-msgid "Add transaction fee to the order"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:181
-msgid "Invoice data"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:183
-msgid "Enable invoice data"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:187
-msgid "Remote interface"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:189
-msgid "Use remote interface"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:193 woocommerce-gateway-epay-dk.php:195
-msgid "Remote password"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:213
-msgid "Documentation can be found here"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:429 woocommerce-gateway-epay-dk.php:445
-msgid "Subscription could not be authorized"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:524
-msgid "Callback completed"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:530
-msgid "Fee"
-msgstr ""
-
-#: woocommerce-gateway-epay-dk.php:564
+#: woocommerce-gateway-epay-dk.php:82 woocommerce-gateway-epay-dk.php:681
 msgid "ePay Payment Solutions"
 msgstr ""
 
-#: woocommerce-gateway-epay-dk.php:661
+#: woocommerce-gateway-epay-dk.php:83
+msgid "Pay using ePay Payment Solutions"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:239
+msgid "Documentation can be found here"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:464 woocommerce-gateway-epay-dk.php:736
+msgid "Credit action failed"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:513
+msgid "Subscription could not be authorized"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:528
+msgid "No subscription found"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:548
+msgid "Bambora Subscription ID was not found"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:554
+msgid "Subscription successfully Canceled."
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:558
+msgid "Subscription could not be canceled"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:632
+msgid "Callback completed"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:638
+msgid "Fee"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:711
+msgid "Capture action failed"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:760
+msgid "Delete action failed"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:833
 msgid "Transaction ID"
 msgstr ""
 
-#: woocommerce-gateway-epay-dk.php:697
+#: woocommerce-gateway-epay-dk.php:842
+msgid "Payment Type"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:894
+msgid "Are you sure you want to delete?"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:907
 msgid "Are you sure you want to credit?"
 msgstr ""
 
-#: lib/class.epaysoap.php:168 lib/class.epaysoap.php:187
-msgid "An unknown error occured"
+#: woocommerce-gateway-epay-dk.php:922
+msgid "TRANSACTION HISTORY"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:940
+msgid "Get Transaction action failed"
+msgstr ""
+
+#: woocommerce-gateway-epay-dk.php:960
+msgid "No transaction was found."
 msgstr ""
 
 #. Plugin Name of the plugin/theme
@@ -145,41 +113,41 @@ msgstr ""
 msgid "http://www.epay.dk/epay-payment-solutions"
 msgstr ""
 
-#: woocommerce-gateway-epay-dk.php:297
+#: woocommerce-gateway-epay-dk.php:346
 msgid "Pay via ePay"
 msgstr "Mit ePay bezahlen"
 
-#: woocommerce-gateway-epay-dk.php:298
+#: woocommerce-gateway-epay-dk.php:347
 msgid "Cancel order &amp; restore cart"
 msgstr "Bestellung stornieren"
 
-#: woocommerce-gateway-epay-dk.php:478
+#: woocommerce-gateway-epay-dk.php:583
 msgid ""
 "Thank you for your order, please click the button below to pay with ePay."
 msgstr ""
 "Danke für Ihre Bestellung. Klicken Sie auf die Taste hierunter, um mit ePay "
 "zu bezahlen."
 
-#: woocommerce-gateway-epay-dk.php:664
+#: woocommerce-gateway-epay-dk.php:860
 msgid "Authorized amount"
 msgstr "Autorisierter Betrag"
 
-#: woocommerce-gateway-epay-dk.php:667
+#: woocommerce-gateway-epay-dk.php:867
 msgid "Captured amount"
 msgstr "Abgehobener Betrag"
 
-#: woocommerce-gateway-epay-dk.php:670
+#: woocommerce-gateway-epay-dk.php:874
 msgid "Credited amount"
 msgstr "Kreditierter betrag"
 
-#: woocommerce-gateway-epay-dk.php:681
+#: woocommerce-gateway-epay-dk.php:888
 msgid "Capture"
 msgstr "Abheben"
 
-#: woocommerce-gateway-epay-dk.php:687
+#: woocommerce-gateway-epay-dk.php:895
 msgid "Delete"
 msgstr "Löschen"
 
-#: woocommerce-gateway-epay-dk.php:698
+#: woocommerce-gateway-epay-dk.php:908
 msgid "Credit"
 msgstr "Kreditieren"
