@@ -19,6 +19,7 @@ class EpayHelper
             'en_NZ' => '2',
             'en_US' => '2',
             'sv_SE' => '3',
+            'nb_NO' => '4',
             'nn_NO' => '4',
             );
 
