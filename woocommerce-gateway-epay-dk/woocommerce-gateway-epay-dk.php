@@ -3,7 +3,7 @@
 Plugin Name: WooCommerce ePay Payment Solutions Gateway
 Plugin URI: http://www.epay.dk
 Description: A payment gateway for ePay payment solutions standard
-Version: 2.6.5
+Version: 2.6.6
 Author: ePay
 Author URI: http://www.epay.dk/epay-payment-solutions
 Text Domain: epay
@@ -35,7 +35,7 @@ function init_wc_epay_dk_gateway()
      **/
 	class WC_Gateway_EPayDk extends WC_Payment_Gateway
 	{
-        const MODULE_VERSION = '2.6.5';
+        const MODULE_VERSION = '2.6.6';
 
         public static $_instance;
         /**
@@ -571,7 +571,7 @@ function init_wc_epay_dk_gateway()
             }
             catch(Exception $ex)
             {
-                throw $ex;
+                //TODO Implement loging function
             }
         }
 
@@ -631,18 +631,20 @@ function init_wc_epay_dk_gateway()
 				// Payment completed
 				$order->add_order_note(__('Callback completed', 'woocommerce-gateway-epay-dk'));
                 $minorUnits = EpayHelper::getCurrencyMinorunits($order->get_order_currency);
-                if($this->addfeetoorder == "yes")
+
+                if($posted['txnfee'] > 0 && $this->addfeetoorder == "yes")
                 {
+                    $feeAmount = floatval(EpayHelper::convertPriceFromMinorUnits($posted['txnfee'], $minorUnits));
                     $order_fee              = new stdClass();
-                    $order_fee->id          = 'epay_fee';
-                    $order_fee->name        = __('Fee', 'woocommerce-gateway-epay-dk');
-                    $order_fee->amount      = isset( $posted['txnfee'] ) ? floatval(EpayHelper::convertPriceFromMinorUnits($posted['txnfee'], $minorUnits)) : 0;
+                    $order_fee->id          = 'epay_surcharge_fee';
+                    $order_fee->name        = __('Surcharge Fee', 'woocommerce-gateway-epay-dk');
+                    $order_fee->amount      = $feeAmount;
                     $order_fee->taxable     = false;
                     $order_fee->tax         = 0;
                     $order_fee->tax_data    = array();
 
                     $order->add_fee($order_fee);
-                    $order->set_total($order->order_total + floatval(EpayHelper::convertPriceFromMinorUnits($posted['txnfee'], $minorUnits)));
+                    $order->set_total($order->order_total + floatval(EpayHelper::convertPriceFromMinorUnits($posted['txnfee'], $minorUnits)));            
                 }
 
 				$order->payment_complete();
@@ -779,35 +781,6 @@ function init_wc_epay_dk_gateway()
 				}
 			}
 		}
-
-        /**
-         * Convert country code to a number
-         *
-         * @param mixed $lan
-         * @return string
-         */
-        public function calcLanguage($lan = null)
-        {
-            if(!isset($lan))
-            {
-                $lan = get_locale();
-            }
-
-            $languageArray = array(
-                'da_DK' => '1',
-                'de_CH' => '7',
-                'de_DE' => '7',
-                'en_AU' => '2',
-                'en_GB' => '2',
-                'en_NZ' => '2',
-                'en_US' => '2',
-                'sv_SE' => '3',
-                'nn_NO' => '4',
-                );
-
-            return key_exists($lan, $languageArray) ? $languageArray[$lan] : '2';
-        }
-
 
 		public function epay_meta_box_payment()
 		{
