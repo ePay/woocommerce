@@ -1,4 +1,4 @@
-=== WooCommerce Bambora Online Classic ===
+=== Bambora Online Classic ===
 Contributors: bambora
 Tags: woocommerce, woo commerce, payment, payment gateway, gateway, subscription, subscriptions, bambora, epay, integration, woocommerce bambora, woocommerce epay, woocommerce bambora online classic, psp
 Requires at least: 4.0.0
