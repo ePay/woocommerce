@@ -3,7 +3,7 @@
 Plugin Name: WooCommerce ePay Payment Solutions Gateway
 Plugin URI: http://www.epay.dk
 Description: A payment gateway for ePay payment solutions standard
-Version: 2.6.6
+Version: 2.6.7
 Author: ePay
 Author URI: http://www.epay.dk/epay-payment-solutions
 Text Domain: epay
@@ -35,7 +35,7 @@ function init_wc_epay_dk_gateway()
      **/
 	class WC_Gateway_EPayDk extends WC_Payment_Gateway
 	{
-        const MODULE_VERSION = '2.6.6';
+        const MODULE_VERSION = '2.6.7';
 
         public static $_instance;
         /**
@@ -468,7 +468,7 @@ function init_wc_epay_dk_gateway()
                 }
                 elseif($credit->pbsresponse != "-1")
                 {
-                    $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $credit->epayresponse);
+                    $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $credit->pbsresponse);
                 }
 
                 echo $this->message("error", $orderNote);
@@ -517,7 +517,7 @@ function init_wc_epay_dk_gateway()
                         }
                         elseif($authorize->pbsresponse != "-1")
                         {
-                            $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $authorize->epayresponse);
+                            $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $authorize->pbsresponse);
                         }
                         $renewal_order->update_status('failed', $orderNote);
                         $subscription->add_order_note($orderNote . ' ID: ' . $renewal_order->id);
@@ -560,10 +560,7 @@ function init_wc_epay_dk_gateway()
                         {
                             $orderNote .= ' - ' . $webservice->getEpayError($this->merchant, $deletesubscription->epayresponse);;
                         }
-                        elseif($deletesubscription->pbsresponse != "-1")
-                        {
-                            $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $deletesubscription->epayresponse);
-                        }
+                       
                         $subscription->add_order_note($orderNote);
                         throw new Exception($orderNote);
                     }
@@ -644,7 +641,7 @@ function init_wc_epay_dk_gateway()
                     $order_fee->tax_data    = array();
 
                     $order->add_fee($order_fee);
-                    $order->set_total($order->order_total + floatval(EpayHelper::convertPriceFromMinorUnits($posted['txnfee'], $minorUnits)));            
+                    $order->set_total($order->order_total + floatval(EpayHelper::convertPriceFromMinorUnits($posted['txnfee'], $minorUnits)));
                 }
 
 				$order->payment_complete();
@@ -715,9 +712,9 @@ function init_wc_epay_dk_gateway()
                                 {
                                     $orderNote .= ' - ' . $webservice->getEpayError($this->merchant, $capture->epayresponse);
                                 }
-                                elseif($capture->pbsresponse != "-1")
+                                elseif($capture->pbsResponse != "-1")
                                 {
-                                    $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $capture->epayresponse);
+                                    $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $capture->pbsResponse);
                                 }
 
                                 echo $this->message("error", $orderNote);
@@ -742,7 +739,7 @@ function init_wc_epay_dk_gateway()
                                 }
                                 elseif($credit->pbsresponse != "-1")
                                 {
-                                    $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $credit->epayresponse);
+                                    $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $credit->pbsresponse);
                                 }
 
                                 echo $this->message("error", $orderNote);
@@ -763,10 +760,6 @@ function init_wc_epay_dk_gateway()
                                 if($delete->epayresponse != "-1")
                                 {
                                     $orderNote .= ' - ' . $webservice->getEpayError($this->merchant, $delete->epayresponse);
-                                }
-                                elseif($delete->pbsresponse != "-1")
-                                {
-                                    $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $delete->epayresponse);
                                 }
 
                                 echo $this->message("error", $orderNote);
@@ -914,10 +907,6 @@ function init_wc_epay_dk_gateway()
                         if($transaction->epayresponse != "-1")
                         {
                             $orderNote .= ' - ' . $webservice->getEpayError($this->merchant, $transaction->epayresponse);
-                        }
-                        elseif($transaction->pbsresponse != "-1")
-                        {
-                            $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $transaction->epayresponse);
                         }
 
                         echo $this->message("error", $orderNote);
