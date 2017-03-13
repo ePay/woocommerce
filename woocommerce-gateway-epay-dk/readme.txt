@@ -12,7 +12,7 @@ Integrates Bambora Online Classic (ePay) payment gateway into your WooCommerce i
 == Description ==
 With Bambora online classic (ePay) for WooCommerce, you are able to integrate the Bambora Classic (ePay) payment window into your WooCommerce installation and start receiving secure online payments.
 
-**Features**
+= Features =
 * Receive payments securely through the Bambora Classic (ePay) payment window
 * Create and handle subscriptions
 * Get an overview over the status for your payments directly from your WooCommerce order page.

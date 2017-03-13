@@ -61,8 +61,9 @@ function init_wc_epay_dk_gateway()
 			$this->icon = WP_PLUGIN_URL . "/" . plugin_basename(dirname(__FILE__ )) . '/ePay-logo.png';
 			$this->has_fields = false;
 
-			$this->supports = array('subscriptions',
+			$this->supports = array(
                 'products',
+                'subscriptions',
                 'subscription_cancellation',
                 'subscription_reactivation',
                 'subscription_suspension',
@@ -78,19 +79,19 @@ function init_wc_epay_dk_gateway()
 			$this->init_settings();
 
             // Define user set variables
-			$this->enabled = array_key_exists("enabled", $this->settings) ? $this->settings["enabled"] : "yes";
-			$this->title = array_key_exists("title", $this->settings) ? $this->settings["title"] : __('ePay Payment Solutions', 'woocommerce-gateway-epay-dk');
-			$this->description = array_key_exists("description", $this->settings) ? $this->settings["description"] : __("Pay using ePay Payment Solutions", 'woocommerce-gateway-epay-dk');
-			$this->merchant = array_key_exists("merchant", $this->settings) ? $this->settings["merchant"] : "";
-			$this->windowid = array_key_exists("windowid", $this->settings) ? $this->settings["windowid"] : "1";
-			$this->windowstate = array_key_exists("windowstate", $this->settings) ? $this->settings["windowstate"] : 1;
-			$this->md5key = array_key_exists("md5key", $this->settings) ? $this->settings["md5key"] : "";
-			$this->instantcapture = array_key_exists("instantcapture", $this->settings) ? $this->settings["instantcapture"] : "no";
-			$this->group = array_key_exists("group", $this->settings) ? $this->settings["group"] : "";
-			$this->authmail = array_key_exists("authmail", $this->settings) ? $this->settings["authmail"] : "";
-			$this->ownreceipt = array_key_exists("ownreceipt", $this->settings) ? $this->settings["ownreceipt"] : "no";
-			$this->remoteinterface = array_key_exists("remoteinterface", $this->settings) ? $this->settings["remoteinterface"] : "no";
-			$this->remotepassword = array_key_exists("remotepassword", $this->settings) ? $this->settings["remotepassword"] : "";
+            $this->enabled = array_key_exists("enabled", $this->settings) ? $this->settings["enabled"] : "yes";
+            $this->title = array_key_exists("title", $this->settings) ? $this->settings["title"] : __('ePay Payment Solutions', 'woocommerce-gateway-epay-dk');
+            $this->description = array_key_exists("description", $this->settings) ? $this->settings["description"] : __("Pay using ePay Payment Solutions", 'woocommerce-gateway-epay-dk');
+            $this->merchant = array_key_exists("merchant", $this->settings) ? $this->settings["merchant"] : "";
+            $this->windowid = array_key_exists("windowid", $this->settings) ? $this->settings["windowid"] : "1";
+            $this->windowstate = array_key_exists("windowstate", $this->settings) ? $this->settings["windowstate"] : 1;
+            $this->md5key = array_key_exists("md5key", $this->settings) ? $this->settings["md5key"] : "";
+            $this->instantcapture = array_key_exists("instantcapture", $this->settings) ? $this->settings["instantcapture"] : "no";
+            $this->group = array_key_exists("group", $this->settings) ? $this->settings["group"] : "";
+            $this->authmail = array_key_exists("authmail", $this->settings) ? $this->settings["authmail"] : "";
+            $this->ownreceipt = array_key_exists("ownreceipt", $this->settings) ? $this->settings["ownreceipt"] : "no";
+            $this->remoteinterface = array_key_exists("remoteinterface", $this->settings) ? $this->settings["remoteinterface"] : "no";
+            $this->remotepassword = array_key_exists("remotepassword", $this->settings) ? $this->settings["remotepassword"] : "";
             $this->enableinvoice = array_key_exists("enableinvoice", $this->settings) ? $this->settings["enableinvoice"] : "no";
             $this->addfeetoorder = array_key_exists("addfeetoorder", $this->settings) ? $this->settings["addfeetoorder"] : "no";
             $this->enablemobilepaymentwindow = array_key_exists("enablemobilepaymentwindow", $this->settings) ? $this->settings["enablemobilepaymentwindow"] : "yes";
@@ -169,7 +170,8 @@ function init_wc_epay_dk_gateway()
 				'md5key' => array(
 								'title' => 'MD5 Key',
 								'type' => 'text',
-								'label' => 'Your md5 key'
+								'label' => 'Your md5 key',
+								'default' => ''
 							),
 				'instantcapture' => array(
 								'title' => 'Instant capture',
@@ -180,10 +182,13 @@ function init_wc_epay_dk_gateway()
 				'group' => array(
 								'title' => 'Group',
 								'type' => 'text',
+								'default' => ''
 							),
 				'authmail' => array(
 								'title' => 'Auth Mail',
 								'type' => 'text',
+								'default' => '',
+                                'custom_attributes' => array('autocomplete' => 'new-password') //Fix for input field gets populated with saved login info
 							),
 				'ownreceipt' => array(
 								'title' => 'Own receipt',
@@ -212,7 +217,9 @@ function init_wc_epay_dk_gateway()
 				'remotepassword' => array(
 								'title' => 'Remote password',
 								'type' => 'password',
-								'label' => 'Remote password'
+								'label' => 'Remote password',
+								'default' => '',
+                                'custom_attributes' => array('autocomplete' => 'new-password') //Fix for input field gets populated with saved login info
 							),
                 'enablemobilepaymentwindow' => array(
 								'title' => 'Mobile Payment Window',
@@ -532,6 +539,7 @@ function init_wc_epay_dk_gateway()
             catch(Exception $ex)
             {
                 $renewal_order->update_status('failed', $ex->getMessage());
+                error_log($ex->getMessage());
             }
         }
 
@@ -560,7 +568,7 @@ function init_wc_epay_dk_gateway()
                         {
                             $orderNote .= ' - ' . $webservice->getEpayError($this->merchant, $deletesubscription->epayresponse);;
                         }
-                       
+
                         $subscription->add_order_note($orderNote);
                         throw new Exception($orderNote);
                     }
@@ -568,7 +576,8 @@ function init_wc_epay_dk_gateway()
             }
             catch(Exception $ex)
             {
-                //TODO Implement loging function
+                $subscription->update_status('failed', $ex->getMessage());
+                error_log($ex->getMessage());
             }
         }
 
@@ -825,21 +834,21 @@ function init_wc_epay_dk_gateway()
                         echo    '<p>';
                         _e('Authorized amount', 'woocommerce-gateway-epay-dk');
                         echo    ':</p>';
-                        echo    '<p>'. EpayHelper::convertPriceFromMinorUnits($transaction->transactionInformation->authamount, $minorUnits, wc_get_price_decimal_separator()). ' ' .$currency .'</p>';
+                        echo    '<p>'. EpayHelper::convertPriceFromMinorUnits($transaction->transactionInformation->authamount, $minorUnits, wc_get_price_decimal_separator(), wc_get_price_thousand_separator()). ' ' .$currency .'</p>';
                         echo '</div>';
 
                         echo '<div class="epay-info-overview">';
                         echo    '<p>';
                         _e('Captured amount', 'woocommerce-gateway-epay-dk');
                         echo    ':</p>';
-                        echo    '<p>'.EpayHelper::convertPriceFromMinorUnits($transaction->transactionInformation->capturedamount, $minorUnits, wc_get_price_decimal_separator()). ' ' .$currency .'</p>';
+                        echo    '<p>'.EpayHelper::convertPriceFromMinorUnits($transaction->transactionInformation->capturedamount, $minorUnits, wc_get_price_decimal_separator(), wc_get_price_thousand_separator()). ' ' .$currency .'</p>';
                         echo '</div>';
 
                         echo '<div class="epay-info-overview">';
                         echo    '<p>';
                         _e('Credited amount', 'woocommerce-gateway-epay-dk');
                         echo    ':</p>';
-                        echo    '<p>'.EpayHelper::convertPriceFromMinorUnits($transaction->transactionInformation->creditedamount, $minorUnits, wc_get_price_decimal_separator()). ' ' .$currency .'</p>';
+                        echo    '<p>'.EpayHelper::convertPriceFromMinorUnits($transaction->transactionInformation->creditedamount, $minorUnits, wc_get_price_decimal_separator(), wc_get_price_thousand_separator()). ' ' .$currency .'</p>';
                         echo '</div>';
 
                         echo '</div>';

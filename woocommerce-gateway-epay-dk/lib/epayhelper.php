@@ -1,5 +1,17 @@
 <?php
-
+/**
+ * Copyright (c) 2017. All rights reserved ePay A/S (a Bambora Company).
+ *
+ * This program is free software. You are allowed to use the software but NOT allowed to modify the software.
+ * It is also not legal to do any changes to the software and distribute it in your own name / brand.
+ *
+ * All use of the payment modules happens at your own risk. We offer a free test account that you can use to test the module.
+ *
+ * @author    ePay A/S (a Bambora Company)
+ * @copyright Bambora (http://bambora.com) (http://www.epay.dk)
+ * @license   ePay A/S (a Bambora Company)
+ *
+ */
 class EpayHelper
 {
 
@@ -93,14 +105,14 @@ class EpayHelper
      * @param $defaultMinorUnits = 2
      * @return string
      */
-    public static function convertPriceFromMinorUnits($amount, $minorUnits, $decimalSeperator = '.')
+    public static function convertPriceFromMinorUnits($amount, $minorUnits, $decimalSeperator = '.', $thousand_separator = '')
     {
         if($amount == "" || $amount == null)
         {
             return 0;
         }
 
-        return number_format($amount / pow(10, $minorUnits), $minorUnits, $decimalSeperator, "");
+        return number_format($amount / pow(10, $minorUnits), $minorUnits, $decimalSeperator, $thousand_separator);
     }
 
     /**
