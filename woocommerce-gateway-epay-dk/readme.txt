@@ -1,19 +1,19 @@
-=== Bambora Online Classic ===
+=== Bambora Online ePay ===
 Contributors: bambora
 Tags: woocommerce, woo commerce, payment, payment gateway, gateway, subscription, subscriptions, bambora, epay, integration, woocommerce bambora, woocommerce epay, woocommerce bambora online classic, psp
 Requires at least: 4.0.0
-Tested up to: 4.7.2
-Stable tag: 2.6.7
+Tested up to: 4.7.3
+Stable tag: 3.0.0
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Integrates Bambora Online Classic (ePay) payment gateway into your WooCommerce installation.
+Integrates Bambora Online ePay payment gateway into your WooCommerce installation.
 
 == Description ==
-With Bambora online classic (ePay) for WooCommerce, you are able to integrate the Bambora Classic (ePay) payment window into your WooCommerce installation and start receiving secure online payments.
+With Bambora Online ePay for WooCommerce, you are able to integrate the Bambora Online ePay payment window into your WooCommerce installation and start receiving secure online payments.
 
 = Features =
-* Receive payments securely through the Bambora Classic (ePay) payment window
+* Receive payments securely through the Bambora Online ePay payment window
 * Create and handle subscriptions
 * Get an overview over the status for your payments directly from your WooCommerce order page.
 * Capture your payments directly from your WooCommerce order page.
@@ -39,11 +39,16 @@ With Bambora online classic (ePay) for WooCommerce, you are able to integrate th
 
 9. Enter and adjust the settings which are described in the **Settings** section.
 
-10. Click **Save Changes** when done and you are ready to use Bambora Classic (ePay) 
+10. Click **Save Changes** when done and you are ready to use Bambora Online ePay
 
 <a href="http://woocommerce.wpguiden.dk/en/configuration">Click here for more information about **Settings**</a>
 
 == Changelog ==
+
+= 3.0.0 =
+* Module name changed from woocommerce-gateway-epay-dk to bambora-online-classic
+* Code refactored to comply with WordPress code standard
+* Translations changed to fit the new module name
 
 = 2.6.7 =
 * Fix for wrong parameter pbsresponse

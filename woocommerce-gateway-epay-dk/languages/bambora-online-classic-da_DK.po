@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce ePay Payment Solutions Gateway\n"
+"Project-Id-Version: Bambora Online Classic (ePay)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-01-18 12:06+0000\n"
-"PO-Revision-Date: 2017-01-18 12:22+0000\n"
+"POT-Creation-Date: 2017-03-14 10:21+0000\n"
+"PO-Revision-Date: 2017-03-14 10:22+0000\n"
 "Last-Translator: admin <allan.wamming.lie@bambora.com>\n"
 "Language-Team: Danish\n"
 "Language: da-DK\n"
@@ -13,138 +13,130 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Loco - https://localise.biz/"
 
-#: woocommerce-gateway-epay-dk.php:82 woocommerce-gateway-epay-dk.php:681
-msgid "ePay Payment Solutions"
-msgstr "ePay Betalings Løsninger"
+#. Name of the plugin
+msgid "Bambora Online ePay"
+msgstr "Bambora Online ePay"
 
-#: woocommerce-gateway-epay-dk.php:83
-msgid "Pay using ePay Payment Solutions"
-msgstr "Betal via ePay Payment Solutions"
+#. Description of the plugin
+msgid "A payment gateway for ePay payment solutions"
+msgstr "En betalings gateway for ePay betalings løsninger"
 
-#: woocommerce-gateway-epay-dk.php:239
+#. Author of the plugin
+msgid "ePay (a Bambora company)"
+msgstr "ePay (en del af Bambora)"
+
+#: bambora-online-classic.php:237
 msgid "Documentation can be found here"
 msgstr "Dokumentation kan findes her"
 
-#: woocommerce-gateway-epay-dk.php:346
+#: bambora-online-classic.php:331
 msgid "Pay via ePay"
 msgstr "Betal med ePay"
 
-#: woocommerce-gateway-epay-dk.php:347
+#: bambora-online-classic.php:332
 msgid "Cancel order &amp; restore cart"
 msgstr "Annullér order"
 
-#: woocommerce-gateway-epay-dk.php:464 woocommerce-gateway-epay-dk.php:736
+#: bambora-online-classic.php:434 bambora-online-classic.php:656
 msgid "Credit action failed"
 msgstr "Refunderings handlingen fejlede"
 
-#: woocommerce-gateway-epay-dk.php:513
+#: bambora-online-classic.php:472
 msgid "Subscription could not be authorized"
 msgstr "Abonnementsbetaling kunne ikke autoriseres"
 
-#: woocommerce-gateway-epay-dk.php:528
+#: bambora-online-classic.php:482
 msgid "No subscription found"
 msgstr "Ingen abonnements betalinger fundet"
 
-#: woocommerce-gateway-epay-dk.php:548
+#: bambora-online-classic.php:496
 msgid "Bambora Subscription ID was not found"
 msgstr "Bambora abonnements id blev ikke fundet"
 
-#: woocommerce-gateway-epay-dk.php:554
+#: bambora-online-classic.php:501
 msgid "Subscription successfully Canceled."
 msgstr "Abonnementet er nu annulleret"
 
-#: woocommerce-gateway-epay-dk.php:558
+#: bambora-online-classic.php:503
 msgid "Subscription could not be canceled"
 msgstr "Abonnementet kunne ikke annulleres"
 
-#: woocommerce-gateway-epay-dk.php:583
+#: bambora-online-classic.php:523
 msgid ""
 "Thank you for your order, please click the button below to pay with ePay."
 msgstr "Tak for din order. Klik på knappen herunder for at betale med ePay."
 
-#: woocommerce-gateway-epay-dk.php:632
+#: bambora-online-classic.php:565
 msgid "Callback completed"
 msgstr "Callback fuldendt"
 
-#: woocommerce-gateway-epay-dk.php:638
-msgid "Fee"
-msgstr "Gebyr"
+#: bambora-online-classic.php:572
+msgid "Surcharge Fee"
+msgstr "Betalings gebyr"
 
-#: woocommerce-gateway-epay-dk.php:711
+#: bambora-online-classic.php:637
 msgid "Capture action failed"
 msgstr "Hævningen fejlede"
 
-#: woocommerce-gateway-epay-dk.php:760
+#: bambora-online-classic.php:674
 msgid "Delete action failed"
 msgstr "Sletningen fejlede"
 
-#: woocommerce-gateway-epay-dk.php:833
+#: bambora-online-classic.php:707
 msgid "Transaction ID"
 msgstr "Transaktions id"
 
-#: woocommerce-gateway-epay-dk.php:842
+#: bambora-online-classic.php:715
 msgid "Payment Type"
 msgstr "betalings type"
 
-#: woocommerce-gateway-epay-dk.php:860
+#: bambora-online-classic.php:732
 msgid "Authorized amount"
 msgstr "Autoriseret beløb"
 
-#: woocommerce-gateway-epay-dk.php:867
+#: bambora-online-classic.php:739
 msgid "Captured amount"
 msgstr "Hævet beløb"
 
-#: woocommerce-gateway-epay-dk.php:874
+#: bambora-online-classic.php:746
 msgid "Credited amount"
 msgstr "Krediteret beløb"
 
-#: woocommerce-gateway-epay-dk.php:888
+#: bambora-online-classic.php:759
 msgid "Capture"
 msgstr "Hæv"
 
-#: woocommerce-gateway-epay-dk.php:894
+#: bambora-online-classic.php:764
 msgid "Are you sure you want to delete?"
 msgstr "Er du sikker på at du vil slette ordren"
 
-#: woocommerce-gateway-epay-dk.php:895
+#: bambora-online-classic.php:765
 msgid "Delete"
 msgstr "Slet"
 
-#: woocommerce-gateway-epay-dk.php:907
+#: bambora-online-classic.php:774
 msgid "Are you sure you want to credit?"
 msgstr "Er du sikke på at du vil krediter ordren"
 
-#: woocommerce-gateway-epay-dk.php:908
+#: bambora-online-classic.php:775
 msgid "Credit"
 msgstr "Krediter"
 
-#: woocommerce-gateway-epay-dk.php:922
+#: bambora-online-classic.php:787
 msgid "TRANSACTION HISTORY"
 msgstr "Transaktions historik"
 
-#: woocommerce-gateway-epay-dk.php:940
+#: bambora-online-classic.php:803
 msgid "Get Transaction action failed"
 msgstr "Visning af transaktionen fejlede"
 
-#: woocommerce-gateway-epay-dk.php:960
+#: bambora-online-classic.php:814
 msgid "No transaction was found."
 msgstr "Ingen transaktion er fundet"
-
-#. Name of the plugin
-msgid "WooCommerce ePay Payment Solutions Gateway"
-msgstr "WooCommerce ePay betalings løsninger"
-
-#. Description of the plugin
-msgid "A payment gateway for ePay payment solutions standard"
-msgstr "En betalings gateway for ePay betalings løsninger"
 
 #. URI of the plugin
 msgid "http://www.epay.dk"
 msgstr "http://www.epay.dk"
-
-#. Author of the plugin
-msgid "ePay"
-msgstr "ePay"
 
 #. Author URI of the plugin
 msgid "http://www.epay.dk/epay-payment-solutions"
