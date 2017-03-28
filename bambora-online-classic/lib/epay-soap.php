@@ -15,10 +15,12 @@ class Epay_Soap {
 
 	private $pwd = '';
 	private $client = null;
+    private $isSubscription = false;
 
 	function __construct( $pwd = '', $subscription = false ) {
-		if ( $subscription ) {
+        if ( $subscription ) {
 			$client = new SoapClient( 'https://ssl.ditonlinebetalingssystem.dk/remote/subscription.asmx?WSDL' );
+            $this->isSubscription = $subscription;
 		} else {
 			$client = new SoapClient( 'https://ssl.ditonlinebetalingssystem.dk/remote/payment.asmx?WSDL' );
 		}
@@ -153,7 +155,11 @@ class Epay_Soap {
 			$epay_params = array();
 			$epay_params['merchantnumber'] = $merchantnumber;
 			$epay_params['language'] = Epay_Helper::get_language_code( get_locale() );
-			$epay_params['pbsresponsecode'] = $pbs_response_code;
+			if( $this->isSubscription ) {
+                $epay_params['pbsResponseCode'] = $pbs_response_code;
+            } else {
+                $epay_params['pbsresponsecode'] = $pbs_response_code;
+            }
 			$epay_params['pwd'] = $this->pwd;
 			$epay_params['epayresponse'] = '-1';
 
