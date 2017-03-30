@@ -3,11 +3,11 @@
 Plugin Name: Bambora Online ePay
 Plugin URI: http://www.epay.dk
 Description: A payment gateway for ePay payment solutions
-Version: 3.0.1
+Version: 3.0.2
 Author: ePay (a Bambora company)
 Author URI: http://www.epay.dk/epay-payment-solutions
 Text Domain: bambora-online-classic
-*/
+ */
 
 add_action( 'plugins_loaded', 'init_bambora_online_classic' );
 
@@ -20,22 +20,22 @@ function init_bambora_online_classic() {
 	include( EPAY_LIB . 'epay-helper.php' );
 
 	/**
-	 * Gateway class
-	 **/
+     * Gateway class
+     **/
 	class Bambora_Online_Classic extends WC_Payment_Gateway {
 
-		const MODULE_VERSION = '3.0.1';
+		const MODULE_VERSION = '3.0.2';
 
 		public static $_instance;
 		/**
-		 * get_instance
-		 *
-		 * Returns a new instance of self, if it does not already exist.
-		 *
-		 * @access public
-		 * @static
-		 * @return object Bambora_Online_Classic
-		 */
+         * get_instance
+         *
+         * Returns a new instance of self, if it does not already exist.
+         *
+         * @access public
+         * @static
+         * @return object Bambora_Online_Classic
+         */
 		public static function get_instance() {
 			if ( ! isset( self::$_instance ) ) {
 				self::$_instance = new self();
@@ -112,16 +112,16 @@ function init_bambora_online_classic() {
 		}
 
 		/**
-		 * Enqueue Styles
-		 */
+         * Enqueue Styles
+         */
 		public function enqueue_bambora_online_classic_style() {
 			wp_register_style( 'epay_style', WP_PLUGIN_URL . '/' . plugin_basename( dirname( __FILE__ ) ) . '/style/epay.css' );
 			wp_enqueue_style( 'epay_style' );
 		}
 
 		/**
-		 * Initialise Gateway Settings Form Fields
-		 */
+         * Initialise Gateway Settings Form Fields
+         */
 		public function init_form_fields() {
 			$this->form_fields = array(
 				'enabled' => array(
@@ -224,11 +224,11 @@ function init_bambora_online_classic() {
 		}
 
 		/**
-		 * Admin Panel Options
-		 * - Options for bits like 'title' and availability on a country-by-country basis
-		 *
-		 * @since 1.0.0
-		 */
+         * Admin Panel Options
+         * - Options for bits like 'title' and availability on a country-by-country basis
+         *
+         * @since 1.0.0
+         */
 		public function admin_options() {
 			$plugin_data = get_plugin_data( __FILE__, false, false );
 			$version = $plugin_data['Version'];
@@ -242,8 +242,8 @@ function init_bambora_online_classic() {
 		}
 
 		/**
-		 * There are no payment fields for epay, but we want to show the description if set.
-		 **/
+         * There are no payment fields for epay, but we want to show the description if set.
+         **/
 		function payment_fields() {
 			if ( $this->description ) {
 				echo wpautop( wptexturize( $this->description ) );
@@ -251,8 +251,8 @@ function init_bambora_online_classic() {
 		}
 
 		/**
-		 * Set the WC Payment Gateway description for the checkout page
-		 */
+         * Set the WC Payment Gateway description for the checkout page
+         */
 		function set_epay_description_for_checkout( $merchantnumber ) {
 			global $woocommerce;
 			$cart = $woocommerce->cart;
@@ -275,8 +275,8 @@ function init_bambora_online_classic() {
 		}
 
 		/**
-		 * Generate the epay button link
-		 **/
+         * Generate the epay button link
+         **/
 		public function generate_epay_form( $order_id ) {
 			$order = new WC_Order( $order_id );
 			$minorUnits = Epay_Helper::get_currency_minorunits( $order->get_order_currency() );
@@ -397,10 +397,10 @@ function init_bambora_online_classic() {
 		}
 
 		/**
-		 * Returns the module header
-		 *
-		 * @return string
-		 */
+         * Returns the module header
+         *
+         * @return string
+         */
 		private function get_module_header_info() {
 			global $woocommerce;
 			$ePayVersion = Bambora_Online_Classic::MODULE_VERSION;
@@ -410,8 +410,8 @@ function init_bambora_online_classic() {
 		}
 
 		/**
-		 * Process the payment and return the result
-		 **/
+         * Process the payment and return the result
+         **/
 		function process_payment( $order_id ) {
 			$order = new WC_Order( $order_id );
 
@@ -427,10 +427,7 @@ function init_bambora_online_classic() {
 			$minorunits = Epay_Helper::get_currency_minorunits( $order->get_order_currency );
 			$webservice = new Epay_Soap( $this->remotepassword );
 			$credit = $webservice->credit( $this->merchant, $transaction_id, Epay_Helper::convert_price_to_minorunits( $amount, $minorunits ) );
-			if ( $credit->creditResult === true ) {
-				echo $this->message( 'updated', 'Payment successfully <strong>credited</strong>.' );
-				return true;
-			} else {
+			if ( !$credit->creditResult ) {
 				$orderNote = __( 'Credit action failed', 'bambora-online-classic' );
 				if ( $credit->epayresponse != '-1' ) {
 					$orderNote .= ' - ' . $webservice->getEpayError( $this->merchant, $credit->epayresponse );
@@ -441,6 +438,8 @@ function init_bambora_online_classic() {
 				echo $this->message( 'error', $orderNote );
 				return false;
 			}
+
+            return true;
 		}
 
 		private function get_subscription( $order ) {
@@ -481,7 +480,8 @@ function init_bambora_online_classic() {
 				} else {
 					$renewal_order->update_status( 'failed', __( 'No subscription found', 'bambora-online-classic' ) );
 				}
-			} catch (Exception $ex) {
+			}
+            catch (Exception $ex) {
 				$renewal_order->update_status( 'failed', $ex->getMessage() );
 				error_log( $ex->getMessage() );
 			}
@@ -510,31 +510,32 @@ function init_bambora_online_classic() {
 						throw new Exception( $orderNote );
 					}
 				}
-			} catch (Exception $ex) {
+			}
+            catch (Exception $ex) {
 				$subscription->update_status( 'failed', $ex->getMessage() );
 				error_log( $ex->getMessage() );
 			}
 		}
 
 		/**
-		 * receipt_page
-		 **/
+         * receipt_page
+         **/
 		function receipt_page( $order ) {
 			echo '<p>' . __( 'Thank you for your order, please click the button below to pay with ePay.', 'bambora-online-classic' ) . '</p>';
 			echo $this->generate_epay_form( $order );
 		}
 
 		/**
-		 * Check for epay IPN Response
-		 **/
+         * Check for epay IPN Response
+         **/
 		function check_callback() {
 			$_GET = stripslashes_deep( $_GET );
 			do_action( 'valid-epay-callback', $_GET );
 		}
 
 		/**
-		 * Successful Payment!
-		 **/
+         * Successful Payment!
+         **/
 		function successful_request( $posted ) {
 			$order = new WC_Order( (int) $posted['wooorderid'] );
 			$psb_reference = get_post_meta( (int) $posted['wooorderid'],'Transaction ID',true );
@@ -598,8 +599,8 @@ function init_bambora_online_classic() {
 		}
 
 		/**
-		 * Checks if Woocommerce Subscriptions is enabled or not
-		 */
+         * Checks if Woocommerce Subscriptions is enabled or not
+         */
 		private function woocommerce_subscription_plugin_is_active() {
 			return class_exists( 'WC_Subscriptions' ) && WC_Subscriptions::$name = 'subscription';
 		}
@@ -625,6 +626,7 @@ function init_bambora_online_classic() {
 				$order = new WC_Order( $_GET['post'] );
 				$transaction_id = get_post_meta( $order->id, 'Transaction ID', true );
 				$minorunits = Epay_Helper::get_currency_minorunits( $order->get_order_currency );
+                $success = false;
 				try {
 					switch ( $_GET['epay_action'] ) {
 						case 'capture':
@@ -634,6 +636,7 @@ function init_bambora_online_classic() {
 							$capture = $webservice->capture( $this->merchant, $transaction_id, Epay_Helper::convert_price_to_minorunits( $amount, $minorunits ) );
 							if ( $capture->captureResult === true ) {
 								echo $this->message( 'updated', 'Payment successfully <strong>captured</strong>.' );
+                                $success = true;
 							} else {
 								$order_note = __( 'Capture action failed', 'bambora-online-classic' );
 								if ( $capture->epayresponse != '-1' ) {
@@ -653,6 +656,7 @@ function init_bambora_online_classic() {
 							$credit = $webservice->credit( $this->merchant, $transaction_id, Epay_Helper::convert_price_to_minorunits( $amount, $minorunits ) );
 							if ( $credit->creditResult === true ) {
 								echo $this->message( 'updated', 'Payment successfully <strong>credited</strong>.' );
+                                $success = true;
 							} else {
 								$order_note = __( 'Credit action failed', 'bambora-online-classic' );
 								if ( $credit->epayresponse != '-1' ) {
@@ -671,6 +675,7 @@ function init_bambora_online_classic() {
 							$delete = $webservice->delete( $this->merchant, $transaction_id );
 							if ( $delete->deleteResult === true ) {
 								echo $this->message( 'updated', 'Payment successfully <strong>deleted</strong>.' );
+                                $success = true;
 							} else {
 								$order_note = __( 'Delete action failed', 'bambora-online-classic' );
 								if ( $delete->epayresponse != '-1' ) {
@@ -682,9 +687,16 @@ function init_bambora_online_classic() {
 
 							break;
 					}
-				} catch (Exception $e) {
+				}
+                catch (Exception $e) {
 					echo $this->message( 'error', $e->getMessage() );
 				}
+
+                if($success) {
+                    global $post;
+                    $url = admin_url( 'post.php?post=' . $post->ID . '&action=edit' );
+                    wp_safe_redirect( $url );
+                }
 			}
 		}
 
@@ -808,7 +820,8 @@ function init_bambora_online_classic() {
 
 						echo $this->message( 'error', $order_note );
 					}
-				} catch (Exception $e) {
+				}
+                catch (Exception $e) {
 					echo $this->message( 'error', $e->getMessage() );
 				}
 			} else {
@@ -894,8 +907,8 @@ function init_bambora_online_classic() {
 	Bambora_Online_Classic::get_instance()->init_hooks();
 
 	/**
-	 * Add the Gateway to WooCommerce
-	 **/
+     * Add the Gateway to WooCommerce
+     **/
 	function add_bambora_online_classic( $methods ) {
 		$methods[] = 'Bambora_Online_Classic';
 		return $methods;
