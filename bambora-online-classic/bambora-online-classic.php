@@ -255,7 +255,7 @@ function init_bambora_online_classic() {
          */
 		function set_epay_description_for_checkout( $merchantnumber ) {
 			global $woocommerce;
-			$cart = $woocommerce->cart;
+			$cart = $this->is_woocommerce_3() ? WC()->cart : $woocommerce->cart;
 			if ( ! $cart || ! $merchantnumber ) {
 				return;
 			}
@@ -278,8 +278,9 @@ function init_bambora_online_classic() {
          * Generate the epay button link
          **/
 		public function generate_epay_form( $order_id ) {
-			$order = new WC_Order( $order_id );
-			$minorUnits = Epay_Helper::get_currency_minorunits( $order->get_order_currency() );
+			$order = wc_get_order( $order_id );
+            $order_currency = $this->is_woocommerce_3() ? $order->get_currency() : $order->get_order_currency();
+			$minorUnits = Epay_Helper::get_currency_minorunits( $order_currency );
 			$epay_args = array(
 				'encoding' => 'UTF-8',
 				'cms' => $this->get_module_header_info(),
@@ -287,7 +288,7 @@ function init_bambora_online_classic() {
 				'mobile' => $this->enablemobilepaymentwindow === 'yes' ? 1 : 0,
 				'merchantnumber' => $this->merchant,
 				'windowid' => $this->windowid,
-				'currency' => $order->get_order_currency(),
+				'currency' => $order_currency,
 				'amount' => Epay_Helper::convert_price_to_minorunits( $order->get_total(), $minorUnits ),
 				'orderid' => str_replace( _x( '#', 'hash before order number', 'woocommerce' ), '', $order->get_order_number() ),
 				'accepturl' => $this->fix_url( $this->get_return_url( $order ) ),
@@ -334,22 +335,47 @@ function init_bambora_online_classic() {
 			return $payment_script;
 		}
 
+        /**
+         * Create invoice lines
+         *
+         * @param WC_Order $order
+         * @param int $minorunits
+         * @return string
+         * */
 		private function create_invoice( $order, $minorunits ) {
 			if ( $this->enableinvoice == 'yes' ) {
-				$invoice['customer']['emailaddress'] = $order->billing_email;
-				$invoice['customer']['firstname'] = $this->json_value_remove_special_characters( $order->billing_first_name );
-				$invoice['customer']['lastname'] = $this->json_value_remove_special_characters( $order->billing_last_name );
-				$invoice['customer']['address'] = $this->json_value_remove_special_characters( $order->billing_address_1 );
-				$invoice['customer']['zip'] = $this->json_value_remove_special_characters( $order->billing_postcode );
-				$invoice['customer']['city'] = $this->json_value_remove_special_characters( $order->billing_city );
-				$invoice['customer']['country'] = $this->json_value_remove_special_characters( $order->billing_country );
+                if($this->is_woocommerce_3())
+                {
+                    $invoice['customer']['emailaddress'] = $order->get_billing_email();
+                    $invoice['customer']['firstname'] = $this->json_value_remove_special_characters( $order->get_billing_first_name() );
+                    $invoice['customer']['lastname'] = $this->json_value_remove_special_characters( $order->get_billing_last_name() );
+                    $invoice['customer']['address'] = $this->json_value_remove_special_characters( $order->get_billing_address_1() );
+                    $invoice['customer']['zip'] = $this->json_value_remove_special_characters( $order->get_billing_postcode() );
+                    $invoice['customer']['city'] = $this->json_value_remove_special_characters( $order->get_billing_city() );
+                    $invoice['customer']['country'] = $this->json_value_remove_special_characters( $order->get_billing_country() );
 
-				$invoice['shippingaddress']['firstname'] = $this->json_value_remove_special_characters( $order->shipping_first_name );
-				$invoice['shippingaddress']['lastname'] = $this->json_value_remove_special_characters( $order->shipping_last_name );
-				$invoice['shippingaddress']['address'] = $this->json_value_remove_special_characters( $order->shipping_address_1 );
-				$invoice['shippingaddress']['zip'] = $this->json_value_remove_special_characters( $order->shipping_postcode );
-				$invoice['shippingaddress']['city'] = $this->json_value_remove_special_characters( $order->shipping_city );
-				$invoice['shippingaddress']['country'] = $this->json_value_remove_special_characters( $order->shipping_country );
+                    $invoice['shippingaddress']['firstname'] = $this->json_value_remove_special_characters( $order->get_shipping_first_name() );
+                    $invoice['shippingaddress']['lastname'] = $this->json_value_remove_special_characters( $order->get_shipping_last_name() );
+                    $invoice['shippingaddress']['address'] = $this->json_value_remove_special_characters( $order->get_shipping_address_1() );
+                    $invoice['shippingaddress']['zip'] = $this->json_value_remove_special_characters( $order->get_shipping_postcode() );
+                    $invoice['shippingaddress']['city'] = $this->json_value_remove_special_characters( $order->get_shipping_city() );
+                    $invoice['shippingaddress']['country'] = $this->json_value_remove_special_characters( $order->get_shipping_country() );
+                } else {
+                    $invoice['customer']['emailaddress'] = $order->billing_email;
+                    $invoice['customer']['firstname'] = $this->json_value_remove_special_characters( $order->billing_first_name );
+                    $invoice['customer']['lastname'] = $this->json_value_remove_special_characters( $order->billing_last_name );
+                    $invoice['customer']['address'] = $this->json_value_remove_special_characters( $order->billing_address_1 );
+                    $invoice['customer']['zip'] = $this->json_value_remove_special_characters( $order->billing_postcode );
+                    $invoice['customer']['city'] = $this->json_value_remove_special_characters( $order->billing_city );
+                    $invoice['customer']['country'] = $this->json_value_remove_special_characters( $order->billing_country );
+
+                    $invoice['shippingaddress']['firstname'] = $this->json_value_remove_special_characters( $order->shipping_first_name );
+                    $invoice['shippingaddress']['lastname'] = $this->json_value_remove_special_characters( $order->shipping_last_name );
+                    $invoice['shippingaddress']['address'] = $this->json_value_remove_special_characters( $order->shipping_address_1 );
+                    $invoice['shippingaddress']['zip'] = $this->json_value_remove_special_characters( $order->shipping_postcode );
+                    $invoice['shippingaddress']['city'] = $this->json_value_remove_special_characters( $order->shipping_city );
+                    $invoice['shippingaddress']['country'] = $this->json_value_remove_special_characters( $order->shipping_country );
+                }
 
 				$invoice['lines'] = array();
 
@@ -375,7 +401,7 @@ function init_bambora_online_classic() {
 					);
 				}
 
-				$shipping = $order->get_total_shipping();
+				$shipping = $this->is_woocommerce_3() ? $order->get_shipping_total() : $order->get_total_shipping();
 				if ( $shipping > 0 ) {
 					$invoice['lines'][] = array(
 						'id' => 'shipping',
@@ -413,7 +439,7 @@ function init_bambora_online_classic() {
          * Process the payment and return the result
          **/
 		function process_payment( $order_id ) {
-			$order = new WC_Order( $order_id );
+			$order = wc_get_order( $order_id );
 
 			return array(
 				'result' 	=> 'success',
@@ -422,9 +448,11 @@ function init_bambora_online_classic() {
 		}
 
 		function process_refund( $order_id, $amount = null, $reason = '' ) {
-			$order = new WC_Order( $order_id );
-			$transaction_id = get_post_meta( $order->id, 'Transaction ID', true );
-			$minorunits = Epay_Helper::get_currency_minorunits( $order->get_order_currency );
+			$order = wc_get_order( $order_id );
+            $order_id = $this->is_woocommerce_3() ? $order->get_id() : $order->id;
+			$transaction_id = get_post_meta( $order_id, 'Transaction ID', true );
+            $order_currency = $this->is_woocommerce_3() ? $order->get_currency() : $order->get_order_currency;
+			$minorunits = Epay_Helper::get_currency_minorunits( $order_currency );
 			$webservice = new Epay_Soap( $this->remotepassword );
 			$credit = $webservice->credit( $this->merchant, $transaction_id, Epay_Helper::convert_price_to_minorunits( $amount, $minorunits ) );
 			if ( !$credit->creditResult ) {
@@ -456,16 +484,18 @@ function init_bambora_online_classic() {
 				$subscription = $this->get_subscription( $renewal_order );
 				if ( isset( $subscription ) ) {
 					$parent_order = $subscription->order;
-					$bambora_subscription_id = get_post_meta( $parent_order->id, 'Subscription ID', true );
-					$order_currency = $renewal_order->get_order_currency();
+                    $parent_order_id = $this->is_woocommerce_3() ? $parent_order->get_id() : $parent_order->id;
+					$bambora_subscription_id = get_post_meta( $parent_order_id, 'Subscription ID', true );
+					$order_currency = $this->is_woocommerce_3() ? $renewal_order->get_currency() : $renewal_order->get_order_currency();
 					$webservice = new Epay_Soap( $this->remotepassword, true );
 
+                    $renewal_order_id = $this->is_woocommerce_3() ? $renewal_order->get_id() : $renewal_order->id;
 					$minorUnits = Epay_Helper::get_currency_minorunits( $order_currency );
 					$amount = Epay_Helper::convert_price_to_minorunits( $amount_to_charge, $minorUnits );
 
-					$authorize = $webservice->authorize( $this->merchant, $bambora_subscription_id, $renewal_order->id, $amount, Epay_Helper::get_iso_code( $order_currency ), (bool) $this->yesnotoint( $this->instantcapture ), $this->group, $this->authmail );
+					$authorize = $webservice->authorize( $this->merchant, $bambora_subscription_id, $renewal_order_id, $amount, Epay_Helper::get_iso_code( $order_currency ), (bool) $this->yesnotoint( $this->instantcapture ), $this->group, $this->authmail );
 					if ( $authorize->authorizeResult === true ) {
-						update_post_meta( $renewal_order->id,'Transaction ID', $authorize->transactionid );
+						update_post_meta( $renewal_order_id,'Transaction ID', $authorize->transactionid );
 						$renewal_order->payment_complete();
 					} else {
 						$orderNote = __( 'Subscription could not be authorized', 'bambora-online-classic' );
@@ -475,7 +505,7 @@ function init_bambora_online_classic() {
 							$orderNote .= ' - ' . $webservice->getPbsError( $this->merchant, $authorize->pbsresponse );
 						}
 						$renewal_order->update_status( 'failed', $orderNote );
-						$subscription->add_order_note( $orderNote . ' ID: ' . $renewal_order->id );
+						$subscription->add_order_note( $orderNote . ' ID: ' . $renewal_order_id );
 					}
 				} else {
 					$renewal_order->update_status( 'failed', __( 'No subscription found', 'bambora-online-classic' ) );
@@ -491,7 +521,8 @@ function init_bambora_online_classic() {
 			try {
 				if ( function_exists( 'wcs_is_subscription' ) && wcs_is_subscription( $subscription ) ) {
 					$parent_order = $subscription->order;
-					$bambora_subscription_id = get_post_meta( $parent_order->id, 'Subscription ID', true );
+                    $parent_order_id = $this->is_woocommerce_3() ? $parent_order->get_id() : $parent_order->id;
+					$bambora_subscription_id = get_post_meta( $parent_order_id, 'Subscription ID', true );
 					if ( empty( $bambora_subscription_id ) ) {
 						throw new Exception( __( 'Bambora Subscription ID was not found', 'bambora-online-classic' ) );
 					}
@@ -537,7 +568,7 @@ function init_bambora_online_classic() {
          * Successful Payment!
          **/
 		function successful_request( $posted ) {
-			$order = new WC_Order( (int) $posted['wooorderid'] );
+			$order = wc_get_order( (int) $posted['wooorderid'] );
 			$psb_reference = get_post_meta( (int) $posted['wooorderid'],'Transaction ID',true );
 
 			if ( empty( $psb_reference ) ) {
@@ -564,20 +595,36 @@ function init_bambora_online_classic() {
 
 				// Payment completed
 				$order->add_order_note( __( 'Callback completed', 'bambora-online-classic' ) );
-				$minorunits = Epay_Helper::get_currency_minorunits( $order->get_order_currency );
+                $order_currency = $this->is_woocommerce_3() ? $order->get_currency() : $order->get_order_currency;
+				$minorunits = Epay_Helper::get_currency_minorunits( $order_currency );
 
 				if ( $posted['txnfee'] > 0 && $this->addfeetoorder == 'yes' ) {
 					$feeAmount = floatval( Epay_Helper::convert_price_from_minorunits( $posted['txnfee'], $minorunits ) );
-					$order_fee              = new stdClass();
-					$order_fee->id          = 'epay_surcharge_fee';
-					$order_fee->name        = __( 'Surcharge Fee', 'bambora-online-classic' );
-					$order_fee->amount      = $feeAmount;
-					$order_fee->taxable     = false;
-					$order_fee->tax         = 0;
-					$order_fee->tax_data    = array();
+                    if($this->is_woocommerce_3())
+                    {
+                        $order_fee = new WC_Order_Item_Fee();
+                        $order_fee->set_total( $feeAmount );
+                        $order_fee->set_tax_status('none');
+                        $order_fee->set_total_tax(0);
+                        $order_fee->save();
 
-					$order->add_fee( $order_fee );
-					$order->set_total( $order->order_total + floatval( Epay_Helper::convert_price_from_minorunits( $posted['txnfee'], $minorunits ) ) );
+                        $order->add_item($order_fee);
+                        $order->calculate_totals();
+
+                    } else {
+                        $order_fee              = new stdClass();
+                        $order_fee->id          = 'epay_surcharge_fee';
+                        $order_fee->name        = __( 'Surcharge Fee', 'bambora-online-classic' );
+                        $order_fee->amount      = $feeAmount;
+                        $order_fee->taxable     = false;
+                        $order_fee->tax         = 0;
+                        $order_fee->tax_data    = array();
+
+                        $order->add_fee( $order_fee );
+                        $order_total = ($this->is_woocommerce_3() ? $order->get_total() : $order->order_total) + $feeAmount;
+                        $order->set_total( $order_total );
+                    }
+
 				}
 
 				$order->payment_complete();
@@ -623,9 +670,11 @@ function init_bambora_online_classic() {
 
 		public function epay_action() {
 			if ( isset( $_GET['epay_action'] ) ) {
-				$order = new WC_Order( $_GET['post'] );
-				$transaction_id = get_post_meta( $order->id, 'Transaction ID', true );
-				$minorunits = Epay_Helper::get_currency_minorunits( $order->get_order_currency );
+                $order = wc_get_order( $_GET['post'] );
+                $order_id = $this->is_woocommerce_3() ? $order->get_id() : $order->id;
+                $order_currency = $this->is_woocommerce_3() ? $order->get_currency() : $order->get_order_currency;
+				$transaction_id = get_post_meta( $order_id, 'Transaction ID', true );
+				$minorunits = Epay_Helper::get_currency_minorunits( $order_currency );
                 $success = false;
 				try {
 					switch ( $_GET['epay_action'] ) {
@@ -703,13 +752,14 @@ function init_bambora_online_classic() {
 		public function epay_meta_box_payment() {
 			global $post;
 
-			$order = new WC_Order( $post->ID );
-			$transaction_id = get_post_meta( $order->id, 'Transaction ID', true );
+			$order = wc_get_order( $post->ID );
+            $order_id = $this->is_woocommerce_3() ? $order->get_id() : $order->id;
+			$transaction_id = get_post_meta( $order_id, 'Transaction ID', true );
 
-			$payment_method = get_post_meta( $order->id , '_payment_method', true );
+			$payment_method = get_post_meta( $order_id , '_payment_method', true );
 			if ( $payment_method === $this->id && strlen( $transaction_id ) > 0 ) {
 				try {
-					$payment_type_id = get_post_meta( $order->id, 'Payment Type ID', true );
+					$payment_type_id = get_post_meta( $order_id, 'Payment Type ID', true );
 					$webservice = new Epay_Soap( $this->remotepassword );
 					$transaction = $webservice->gettransaction( $this->merchant, $transaction_id );
 
@@ -901,6 +951,15 @@ function init_bambora_online_classic() {
 
 			return 'Unknown';
 		}
+
+        /**
+         * Determines if the current WooCommerce version is >= 3.0.x
+         *
+         * @return boolean
+         */
+        private function is_woocommerce_3() {
+            return version_compare(WC()->version, '3.0', 'ge');
+        }
 	}
 
 	add_filter( 'woocommerce_payment_gateways', 'add_bambora_online_classic' );
