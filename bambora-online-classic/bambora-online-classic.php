@@ -521,10 +521,12 @@ function init_bambora_online_classic() {
 			try {
 				if ( function_exists( 'wcs_is_subscription' ) && wcs_is_subscription( $subscription ) ) {
 					$parent_order = $subscription->order;
-                    $parent_order_id = $this->is_woocommerce_3() ? $parent_order->get_id() : $parent_order->id;
+					$parent_order_id = $this->is_woocommerce_3() ? $parent_order->get_id() : $parent_order->id;
 					$bambora_subscription_id = get_post_meta( $parent_order_id, 'Subscription ID', true );
 					if ( empty( $bambora_subscription_id ) ) {
-						throw new Exception( __( 'Bambora Subscription ID was not found', 'bambora-online-classic' ) );
+                        $orderNote = __( 'Bambora Subscription ID was not found', 'bambora-online-classic' );
+                        $subscription->add_order_note( $orderNote );
+						throw new Exception( $orderNote );
 					}
 					$webservice = new Epay_Soap( $this->remotepassword, true );
 					$deletesubscription = $webservice->deletesubscription( $this->merchant, $bambora_subscription_id );
@@ -536,14 +538,12 @@ function init_bambora_online_classic() {
 							$orderNote .= ' - ' . $webservice->getEpayError( $this->merchant, $deletesubscription->epayresponse );
 							;
 						}
-
 						$subscription->add_order_note( $orderNote );
 						throw new Exception( $orderNote );
 					}
 				}
 			}
-            catch (Exception $ex) {
-				$subscription->update_status( 'failed', $ex->getMessage() );
+			catch (Exception $ex) {
 				error_log( $ex->getMessage() );
 			}
 		}

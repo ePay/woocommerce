@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Bambora Online Classic (ePay)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-03-14 10:21+0000\n"
-"PO-Revision-Date: 2017-03-14 10:22+0000\n"
-"Last-Translator: admin <allan.wamming.lie@bambora.com>\n"
+"PO-Revision-Date: 2017-05-29 08:37+0000\n"
+"Last-Translator: Søren Larsen <soren.larsen@bambora.com>\n"
 "Language-Team: Danish\n"
 "Language: da-DK\n"
 "Plural-Forms: nplurals=2; plural=n != 1\n"
@@ -72,7 +72,7 @@ msgstr "Callback fuldendt"
 
 #: bambora-online-classic.php:572
 msgid "Surcharge Fee"
-msgstr "Betalings gebyr"
+msgstr "Betalingsgebyr"
 
 #: bambora-online-classic.php:637
 msgid "Capture action failed"
@@ -88,7 +88,7 @@ msgstr "Transaktions id"
 
 #: bambora-online-classic.php:715
 msgid "Payment Type"
-msgstr "betalings type"
+msgstr "Betalingstype"
 
 #: bambora-online-classic.php:732
 msgid "Authorized amount"
@@ -120,11 +120,11 @@ msgstr "Er du sikke på at du vil krediter ordren"
 
 #: bambora-online-classic.php:775
 msgid "Credit"
-msgstr "Krediter"
+msgstr "Kreditér"
 
 #: bambora-online-classic.php:787
 msgid "TRANSACTION HISTORY"
-msgstr "Transaktions historik"
+msgstr "Transaktionshistorik"
 
 #: bambora-online-classic.php:803
 msgid "Get Transaction action failed"
