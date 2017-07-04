@@ -2,8 +2,8 @@
 Contributors: bambora
 Tags: woocommerce, woo commerce, payment, payment gateway, gateway, subscription, subscriptions, bambora, epay, integration, woocommerce bambora, woocommerce epay, woocommerce bambora online classic, psp
 Requires at least: 4.0.0
-Tested up to: 4.7.5
-Stable tag: 3.1.1
+Tested up to: 4.8.0
+Stable tag: 3.1.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,6 +45,13 @@ With Bambora Online ePay for WooCommerce, you are able to integrate the Bambora 
 <a href="http://woocommerce.wpguiden.dk/en/configuration">Click here for more information about **Settings**</a>
 
 == Changelog ==
+
+= 3.1.2 =
+* Improved quality for Bambora logo
+* Improved quality for Bambora payment type logoes
+* Adds rounding option in module configuration
+* Adds more language codes
+* Refactoring of module css files
 
 = 3.1.1 =
 * Fixes bug where a failed subscription cancellation could cause an unhandled exception
