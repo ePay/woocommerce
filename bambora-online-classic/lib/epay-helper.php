@@ -218,10 +218,10 @@ class Epay_Helper
         }
 
         switch ($rounding) {
-            case Bambora_Currency::ROUND_UP:
+            case Epay_Helper::ROUND_UP:
                 $amount = ceil($amount * pow(10, $minorunits));
                 break;
-            case Bambora_Currency::ROUND_DOWN:
+            case Epay_Helper::ROUND_DOWN:
                 $amount = floor($amount * pow(10, $minorunits));
                 break;
             default:
