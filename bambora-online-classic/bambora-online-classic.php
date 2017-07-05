@@ -3,7 +3,7 @@
 Plugin Name: Bambora Online ePay
 Plugin URI: http://www.epay.dk
 Description: A payment gateway for Bambora Online ePay
-Version: 3.1.2
+Version: 3.1.3
 Author: Bambora Online
 Author URI: http://www.epay.dk/epay-payment-solutions
 Text Domain: bambora-online-classic
@@ -27,7 +27,7 @@ function init_bambora_online_classic()
      **/
     class Bambora_Online_Classic extends WC_Payment_Gateway
     {
-        const MODULE_VERSION = '3.1.2';
+        const MODULE_VERSION = '3.1.3';
 
         public static $_instance;
         /**
