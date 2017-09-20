@@ -3,7 +3,7 @@
 Plugin Name: Bambora Online ePay
 Plugin URI: http://www.epay.dk
 Description: A payment gateway for Bambora Online ePay
-Version: 3.1.4
+Version: 3.1.5
 Author: Bambora Online
 Author URI: http://www.epay.dk/epay-payment-solutions
 Text Domain: bambora-online-classic
@@ -28,6 +28,7 @@ function init_bambora_online_classic()
     class Bambora_Online_Classic extends WC_Payment_Gateway
     {
         const MODULE_VERSION = '3.1.4';
+        const PSP_REFERENCE = 'Transaction ID';
 
         public static $_instance;
         /**
@@ -459,20 +460,6 @@ function init_bambora_online_classic()
         }
 
         /**
-         * Returns the module header
-         *
-         * @return string
-         */
-        private function get_module_header_info()
-        {
-            global $woocommerce;
-            $ePayVersion = Bambora_Online_Classic::MODULE_VERSION;
-            $woocommerce_version = $woocommerce->version;
-            $result = 'WooCommerce/' . $woocommerce_version . ' Module/' . $ePayVersion;
-            return $result;
-        }
-
-        /**
          * Process the payment and return the result
          **/
         public function process_payment($order_id)
@@ -488,8 +475,7 @@ function init_bambora_online_classic()
         public function process_refund($order_id, $amount = null, $reason = '')
         {
             $order = wc_get_order($order_id);
-            $order_id = $this->is_woocommerce_3() ? $order->get_id() : $order->id;
-            $transaction_id = get_post_meta($order_id, 'Transaction ID', true);
+            $transaction_id = $this->get_bambora_transaction_id($order);
             $order_currency = $this->is_woocommerce_3() ? $order->get_currency() : $order->get_order_currency;
             $minorunits = Epay_Helper::get_currency_minorunits($order_currency);
             $webservice = new Epay_Soap($this->remotepassword);
@@ -527,31 +513,44 @@ function init_bambora_online_classic()
                     $parent_order = $subscription->order;
                     $parent_order_id = $this->is_woocommerce_3() ? $parent_order->get_id() : $parent_order->id;
                     $bambora_subscription_id = get_post_meta($parent_order_id, 'Subscription ID', true);
-                    $order_currency = $this->is_woocommerce_3() ? $renewal_order->get_currency() : $renewal_order->get_order_currency();
-                    $webservice = new Epay_Soap($this->remotepassword, true);
+                    if( strlen( $bambora_subscription_id ) > 0) {
+                        $order_currency = $this->is_woocommerce_3() ? $renewal_order->get_currency() : $renewal_order->get_order_currency();
+                        $webservice = new Epay_Soap($this->remotepassword, true);
 
-                    $renewal_order_id = $this->is_woocommerce_3() ? $renewal_order->get_id() : $renewal_order->id;
-                    $minorUnits = Epay_Helper::get_currency_minorunits($order_currency);
-                    $amount = Epay_Helper::convert_price_to_minorunits($amount_to_charge, $minorUnits, $this->roundingmode);
+                        $renewal_order_id = $this->is_woocommerce_3() ? $renewal_order->get_id() : $renewal_order->id;
+                        $minorUnits = Epay_Helper::get_currency_minorunits($order_currency);
+                        $amount = Epay_Helper::convert_price_to_minorunits($amount_to_charge, $minorUnits, $this->roundingmode);
 
-                    $authorize = $webservice->authorize($this->merchant, $bambora_subscription_id, $renewal_order_id, $amount, Epay_Helper::get_iso_code($order_currency), (bool) $this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
-                    if ($authorize->authorizeResult === true) {
-                        update_post_meta($renewal_order_id, 'Transaction ID', $authorize->transactionid);
-                        $renewal_order->payment_complete();
-                    } else {
-                        $orderNote = __('Subscription could not be authorized', 'bambora-online-classic');
-                        if ($authorize->epayresponse != '-1') {
-                            $orderNote .= ' - ' . $webservice->getEpayError($this->merchant, $authorize->epayresponse);
-                        } elseif ($authorize->pbsresponse != '-1') {
-                            $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $authorize->pbsresponse);
+                        $authorize = $webservice->authorize($this->merchant, $bambora_subscription_id, $renewal_order_id, $amount, Epay_Helper::get_iso_code($order_currency), (bool) $this->yesnotoint($this->instantcapture), $this->group, $this->authmail);
+                        if ($authorize->authorizeResult === true) {
+                            if( $this->is_woocommerce_3() ) {
+                                $renewal_order->set_transaction_id( $authorize->transactionid );
+                                $renewal_order->save();
+                            } else {
+                                update_post_meta($renewal_order_id, $this::PSP_REFERENCE, $authorize->transactionid);
+                            }
+
+
+                            $renewal_order->payment_complete();
+                        } else {
+                            $orderNote = __('Subscription could not be authorized', 'bambora-online-classic');
+                            if ($authorize->epayresponse != '-1') {
+                                $orderNote .= ' - ' . $webservice->getEpayError($this->merchant, $authorize->epayresponse);
+                            } elseif ($authorize->pbsresponse != '-1') {
+                                $orderNote .= ' - ' . $webservice->getPbsError($this->merchant, $authorize->pbsresponse);
+                            }
+                            $renewal_order->update_status('failed', $orderNote);
+                            $subscription->add_order_note($orderNote . ' ID: ' . $renewal_order_id);
                         }
-                        $renewal_order->update_status('failed', $orderNote);
-                        $subscription->add_order_note($orderNote . ' ID: ' . $renewal_order_id);
+                    } else {
+                        $renewal_order->update_status('failed', __('Bambora Subscription ID was not found', 'bambora-online-classic'));
                     }
                 } else {
                     $renewal_order->update_status('failed', __('No subscription found', 'bambora-online-classic'));
                 }
-            } catch (Exception $ex) {
+
+            }
+            catch (Exception $ex) {
                 $renewal_order->update_status('failed', $ex->getMessage());
                 error_log($ex->getMessage());
             }
@@ -564,7 +563,7 @@ function init_bambora_online_classic()
                     $parent_order = $subscription->order;
                     $parent_order_id = $this->is_woocommerce_3() ? $parent_order->get_id() : $parent_order->id;
                     $bambora_subscription_id = get_post_meta($parent_order_id, 'Subscription ID', true);
-                    if (empty($bambora_subscription_id)) {
+                    if ( strlen( $bambora_subscription_id ) === 0) {
                         $orderNote = __('Bambora Subscription ID was not found', 'bambora-online-classic');
                         $subscription->add_order_note($orderNote);
                         throw new Exception($orderNote);
@@ -577,15 +576,17 @@ function init_bambora_online_classic()
                         $orderNote = __('Subscription could not be canceled', 'bambora-online-classic');
                         if ($deletesubscription->epayresponse != '-1') {
                             $orderNote .= ' - ' . $webservice->getEpayError($this->merchant, $deletesubscription->epayresponse);
-                            ;
                         }
                         $subscription->add_order_note($orderNote);
                         throw new Exception($orderNote);
                     }
                 }
-            } catch (Exception $ex) {
-                error_log($ex->getMessage());
             }
+            catch (Exception $ex) {
+                error_log($ex->getMessage());
+                return false;
+            }
+            return true;
         }
 
         /**
@@ -611,10 +612,10 @@ function init_bambora_online_classic()
          **/
         public function successful_request($posted)
         {
+            $woo_order_id = $posted['wooorderid'];
             $order = wc_get_order((int) $posted['wooorderid']);
-            $psb_reference = get_post_meta((int) $posted['wooorderid'], 'Transaction ID', true);
-
-            if (empty($psb_reference)) {
+            $psp_reference = $this->get_bambora_transaction_id($order);
+            if (empty($psp_reference)) {
                 // Check for MD5 validity
                 $var = '';
 
@@ -626,7 +627,6 @@ function init_bambora_online_classic()
                     }
 
                     $genstamp = md5($var . $this->md5key);
-
                     if ($genstamp != $posted['hash']) {
                         $message = 'MD5 check failed for ePay callback with order_id:' . $posted['wooorderid'];
                         $order->add_order_note($message);
@@ -637,7 +637,6 @@ function init_bambora_online_classic()
                 }
 
                 // Payment completed
-                $order->add_order_note(__('Callback completed', 'bambora-online-classic'));
                 $order_currency = $this->is_woocommerce_3() ? $order->get_currency() : $order->get_order_currency;
                 $minorunits = Epay_Helper::get_currency_minorunits($order_currency);
 
@@ -669,12 +668,26 @@ function init_bambora_online_classic()
 
                 $order->payment_complete();
 
-                update_post_meta((int) $posted['wooorderid'], 'Transaction ID', $posted['txnid']);
-                update_post_meta((int) $posted['wooorderid'], 'Payment Type ID', $posted['paymenttype']);
+                $transaction_id = $posted['txnid'];
+
+                if($this->is_woocommerce_3()) {
+                    $order->set_transaction_id( $transaction_id );
+                } else {
+                    update_post_meta( $woo_order_id, $this::PSP_REFERENCE, $transaction_id );
+                }
+
+                update_post_meta((int) $woo_order_id, 'Payment Type ID', $posted['paymenttype']);
 
                 if ($this->woocommerce_subscription_plugin_is_active() && isset($posted['subscriptionid'])) {
                     WC_Subscriptions_Manager::activate_subscriptions_for_order($order);
-                    update_post_meta((int) $posted['wooorderid'], 'Subscription ID', $posted['subscriptionid']);
+
+                    update_post_meta((int) $woo_order_id, 'Subscription ID', $posted['subscriptionid']);
+                    $order->add_order_note( __( 'Subscription activated', 'bambora-online-classic' ) );
+                }
+                $order->add_order_note( __( 'Callback completed', 'bambora-online-classic' ) );
+
+                if($this->is_woocommerce_3()) {
+                    $order->save();
                 }
 
                 status_header(200);
@@ -683,14 +696,6 @@ function init_bambora_online_classic()
                 status_header(200);
                 die('Order already Created');
             }
-        }
-
-        /**
-         * Checks if Woocommerce Subscriptions is enabled or not
-         */
-        private function woocommerce_subscription_plugin_is_active()
-        {
-            return class_exists('WC_Subscriptions') && WC_Subscriptions::$name = 'subscription';
         }
 
         public function epay_meta_boxes()
@@ -714,79 +719,81 @@ function init_bambora_online_classic()
         {
             if (isset($_GET['epay_action'])) {
                 $order = wc_get_order($_GET['post']);
-                $order_id = $this->is_woocommerce_3() ? $order->get_id() : $order->id;
-                $order_currency = $this->is_woocommerce_3() ? $order->get_currency() : $order->get_order_currency;
-                $transaction_id = get_post_meta($order_id, 'Transaction ID', true);
-                $minorunits = Epay_Helper::get_currency_minorunits($order_currency);
-                $success = false;
-                try {
-                    switch ($_GET['epay_action']) {
-                        case 'capture':
-                            $amount = str_replace(wc_get_price_decimal_separator(), '.', $_GET['amount']);
-                            $webservice = new Epay_Soap($this->remotepassword);
+                if ( isset( $order ) ) {
+                    $order_currency = $this->is_woocommerce_3() ? $order->get_currency() : $order->get_order_currency;
+                    $transaction_id = $this->get_bambora_transaction_id($order);
+                    $minorunits = Epay_Helper::get_currency_minorunits($order_currency);
+                    $success = false;
+                    try {
+                        switch ($_GET['epay_action']) {
+                            case 'capture':
+                                $amount = str_replace(wc_get_price_decimal_separator(), '.', $_GET['amount']);
+                                $webservice = new Epay_Soap($this->remotepassword);
 
-                            $capture = $webservice->capture($this->merchant, $transaction_id, Epay_Helper::convert_price_to_minorunits($amount, $minorunits, $this->roundingmode));
-                            if ($capture->captureResult === true) {
-                                echo $this->message('updated', 'Payment successfully <strong>captured</strong>.');
-                                $success = true;
-                            } else {
-                                $order_note = __('Capture action failed', 'bambora-online-classic');
-                                if ($capture->epayresponse != '-1') {
-                                    $order_note .= ' - ' . $webservice->getEpayError($this->merchant, $capture->epayresponse);
-                                } elseif ($capture->pbsResponse != '-1') {
-                                    $order_note .= ' - ' . $webservice->getPbsError($this->merchant, $capture->pbsResponse);
+                                $capture = $webservice->capture($this->merchant, $transaction_id, Epay_Helper::convert_price_to_minorunits($amount, $minorunits, $this->roundingmode));
+                                if ($capture->captureResult === true) {
+                                    echo $this->message('updated', 'Payment successfully <strong>captured</strong>.');
+                                    $success = true;
+                                } else {
+                                    $order_note = __('Capture action failed', 'bambora-online-classic');
+                                    if ($capture->epayresponse != '-1') {
+                                        $order_note .= ' - ' . $webservice->getEpayError($this->merchant, $capture->epayresponse);
+                                    } elseif ($capture->pbsResponse != '-1') {
+                                        $order_note .= ' - ' . $webservice->getPbsError($this->merchant, $capture->pbsResponse);
+                                    }
+
+                                    echo $this->message('error', $order_note);
                                 }
 
-                                echo $this->message('error', $order_note);
-                            }
+                                break;
 
-                            break;
+                            case 'credit':
+                                $amount = str_replace(wc_get_price_decimal_separator(), '.', $_GET['amount']);
+                                $webservice = new Epay_Soap($this->remotepassword);
+                                $credit = $webservice->credit($this->merchant, $transaction_id, Epay_Helper::convert_price_to_minorunits($amount, $minorunits, $this->roundingmode));
+                                if ($credit->creditResult === true) {
+                                    echo $this->message('updated', 'Payment successfully <strong>credited</strong>.');
+                                    $success = true;
+                                } else {
+                                    $order_note = __('Credit action failed', 'bambora-online-classic');
+                                    if ($credit->epayresponse != '-1') {
+                                        $order_note .= ' - ' . $webservice->getEpayError($this->merchant, $credit->epayresponse);
+                                    } elseif ($credit->pbsresponse != '-1') {
+                                        $order_note .= ' - ' . $webservice->getPbsError($this->merchant, $credit->pbsresponse);
+                                    }
 
-                        case 'credit':
-                            $amount = str_replace(wc_get_price_decimal_separator(), '.', $_GET['amount']);
-                            $webservice = new Epay_Soap($this->remotepassword);
-                            $credit = $webservice->credit($this->merchant, $transaction_id, Epay_Helper::convert_price_to_minorunits($amount, $minorunits, $this->roundingmode));
-                            if ($credit->creditResult === true) {
-                                echo $this->message('updated', 'Payment successfully <strong>credited</strong>.');
-                                $success = true;
-                            } else {
-                                $order_note = __('Credit action failed', 'bambora-online-classic');
-                                if ($credit->epayresponse != '-1') {
-                                    $order_note .= ' - ' . $webservice->getEpayError($this->merchant, $credit->epayresponse);
-                                } elseif ($credit->pbsresponse != '-1') {
-                                    $order_note .= ' - ' . $webservice->getPbsError($this->merchant, $credit->pbsresponse);
+                                    echo $this->message('error', $order_note);
                                 }
 
-                                echo $this->message('error', $order_note);
-                            }
+                                break;
 
-                            break;
+                            case 'delete':
+                                $webservice = new Epay_Soap($this->remotepassword);
+                                $delete = $webservice->delete($this->merchant, $transaction_id);
+                                if ($delete->deleteResult === true) {
+                                    echo $this->message('updated', 'Payment successfully <strong>deleted</strong>.');
+                                    $success = true;
+                                } else {
+                                    $order_note = __('Delete action failed', 'bambora-online-classic');
+                                    if ($delete->epayresponse != '-1') {
+                                        $order_note .= ' - ' . $webservice->getEpayError($this->merchant, $delete->epayresponse);
+                                    }
 
-                        case 'delete':
-                            $webservice = new Epay_Soap($this->remotepassword);
-                            $delete = $webservice->delete($this->merchant, $transaction_id);
-                            if ($delete->deleteResult === true) {
-                                echo $this->message('updated', 'Payment successfully <strong>deleted</strong>.');
-                                $success = true;
-                            } else {
-                                $order_note = __('Delete action failed', 'bambora-online-classic');
-                                if ($delete->epayresponse != '-1') {
-                                    $order_note .= ' - ' . $webservice->getEpayError($this->merchant, $delete->epayresponse);
+                                    echo $this->message('error', $order_note);
                                 }
 
-                                echo $this->message('error', $order_note);
-                            }
-
-                            break;
+                                break;
+                        }
                     }
-                } catch (Exception $e) {
-                    echo $this->message('error', $e->getMessage());
-                }
+                    catch (Exception $e) {
+                        echo $this->message('error', $e->getMessage());
+                    }
 
-                if ($success) {
-                    global $post;
-                    $url = admin_url('post.php?post=' . $post->ID . '&action=edit');
-                    wp_safe_redirect($url);
+                    if ($success) {
+                        global $post;
+                        $url = admin_url('post.php?post=' . $post->ID . '&action=edit');
+                        wp_safe_redirect($url);
+                    }
                 }
             }
         }
@@ -797,7 +804,7 @@ function init_bambora_online_classic()
 
             $order = wc_get_order($post->ID);
             $order_id = $this->is_woocommerce_3() ? $order->get_id() : $order->id;
-            $transaction_id = get_post_meta($order_id, 'Transaction ID', true);
+            $transaction_id = $this->get_bambora_transaction_id($order);
 
             $payment_method = get_post_meta($order_id, '_payment_method', true);
             if ($payment_method === $this->id && strlen($transaction_id) > 0) {
@@ -914,7 +921,8 @@ function init_bambora_online_classic()
 
                         echo $this->message('error', $order_note);
                     }
-                } catch (Exception $e) {
+                }
+                catch (Exception $e) {
                     echo $this->message('error', $e->getMessage());
                 }
             } else {
@@ -927,6 +935,45 @@ function init_bambora_online_classic()
             return '<div id="message" class="' . $type . '">
                 <p>' . $message . '</p>
             </div>';
+        }
+
+        /**
+         * Checks if Woocommerce Subscriptions is enabled or not
+         */
+        private function woocommerce_subscription_plugin_is_active()
+        {
+            return class_exists('WC_Subscriptions') && WC_Subscriptions::$name = 'subscription';
+        }
+
+        /**
+         * Returns the module header
+         *
+         * @return string
+         */
+        private function get_module_header_info()
+        {
+            global $woocommerce;
+            $ePayVersion = Bambora_Online_Classic::MODULE_VERSION;
+            $woocommerce_version = $woocommerce->version;
+            $result = 'WooCommerce/' . $woocommerce_version . ' Module/' . $ePayVersion;
+            return $result;
+        }
+
+        private function get_bambora_transaction_id($order)
+        {
+            $order_id = $this->is_woocommerce_3() ? $order->get_id() : $order->id;
+            $transaction_id = "";
+            if( $this->is_woocommerce_3() ) {
+                $transaction_id = $order->get_transaction_id();
+                // For backward compability
+                if( strlen( $transaction_id ) === 0 ) {
+                    $transaction_id = get_post_meta( $order_id, $this::PSP_REFERENCE, true );
+                }
+            } else {
+                $transaction_id = get_post_meta( $order_id, $this::PSP_REFERENCE, true );
+            }
+
+            return $transaction_id;
         }
 
         /**
