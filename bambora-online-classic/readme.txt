@@ -2,7 +2,7 @@
 Contributors: bambora
 Tags: woocommerce, woo commerce, payment, payment gateway, gateway, subscription, subscriptions, bambora, epay, integration, woocommerce bambora, woocommerce epay, woocommerce bambora online classic, psp
 Requires at least: 4.0.0
-Tested up to: 4.8.0
+Tested up to: 4.8.2
 Stable tag: 3.1.5
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
