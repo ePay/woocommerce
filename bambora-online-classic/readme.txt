@@ -3,7 +3,7 @@ Contributors: bambora
 Tags: woocommerce, woo commerce, payment, payment gateway, gateway, subscription, subscriptions, bambora, epay, integration, woocommerce bambora, woocommerce epay, woocommerce bambora online classic, psp
 Requires at least: 4.0.0
 Tested up to: 4.8.2
-Stable tag: 3.1.5
+Stable tag: 4.0.0
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,7 +19,9 @@ With Bambora Online ePay for WooCommerce, you are able to integrate the Bambora 
 * Capture your payments directly from your WooCommerce order page.
 * Credit your payments directly from your WooCommerce order page.
 * Delete your payments directly from your WooCommerce order page.
+* Sign up, process, cancel, reactivate and change subscriptions
 * Supports WooCommerce 2.6+ and 3.0
+* Supports WooCommerce Subscription 2.x
 
 == Installation ==
 1. Go to your WordPress administration page and log in. Example url: http://www.yourshop.com/wp-admin
@@ -45,6 +47,24 @@ With Bambora Online ePay for WooCommerce, you are able to integrate the Bambora 
 <a href="http://woocommerce.wpguiden.dk/en/configuration">Click here for more information about **Settings**</a>
 
 == Changelog ==
+= 4.0.0 - beta =
+* Refactoring of module to comply with WooCommerce 3.x and WooCommerce Subscription 2.x standards
+* Adds Change payment for subscriptions
+* Adds Reactivation of failed subscriptions
+* Adds Reactivation of canceled subscriptions
+* Removed support for multiple-subscriptions
+* Improved information flow
+* Improved error handling
+* Adds filter to callback url and callback completion
+* Changed payment icons
+* Code cleanup and performance enhancement
+* Updates orders from earlier modules to comply with new standards
+* Labels and Translations updated
+* Adds support for WooCommerce Sequential Order Numbers
+* Adds debug logging with access from module configuration page
+* Refactoring of invoice lines
+* Refactoring of order actions
+
 = 3.1.5 =
 * Fix for transaction id not being saved in Woocommerce 3.x
 * Adds check for bambora subscription id
