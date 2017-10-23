@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-03-14 10:21+0000\n"
+"POT-Creation-Date: 2017-10-20 12:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -14,113 +14,168 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Loco - https://localise.biz/"
 
-#: bambora-online-classic.php:237
-msgid "Documentation can be found here"
+#: bambora-online-classic.php:458 bambora-online-classic.php:915
+msgid "Refund action failed"
 msgstr ""
 
-#: bambora-online-classic.php:331
-msgid "Pay via ePay"
-msgstr ""
-
-#: bambora-online-classic.php:332
-msgid "Cancel order &amp; restore cart"
-msgstr ""
-
-#: bambora-online-classic.php:434 bambora-online-classic.php:656
-msgid "Credit action failed"
-msgstr ""
-
-#: bambora-online-classic.php:472
-msgid "Subscription could not be authorized"
-msgstr ""
-
-#: bambora-online-classic.php:482
-msgid "No subscription found"
-msgstr ""
-
-#: bambora-online-classic.php:496
-msgid "Bambora Subscription ID was not found"
-msgstr ""
-
-#: bambora-online-classic.php:501
-msgid "Subscription successfully Canceled."
-msgstr ""
-
-#: bambora-online-classic.php:503
-msgid "Subscription could not be canceled"
-msgstr ""
-
-#: bambora-online-classic.php:523
+#: bambora-online-classic.php:487
+#, php-format
 msgid ""
-"Thank you for your order, please click the button below to pay with ePay."
+"Bambora Online ePay Subscription could not be authorized for renewal order # "
+"%s - %s"
 msgstr ""
 
-#: bambora-online-classic.php:565
-msgid "Callback completed"
+#: bambora-online-classic.php:506
+msgid "Bambora Online ePay Subscription id was not found"
 msgstr ""
 
-#: bambora-online-classic.php:572
-msgid "Surcharge Fee"
+#: bambora-online-classic.php:528
+#, php-format
+msgid ""
+"Bambora Online ePay Subscription was authorized for renewal order %s with "
+"transaction id %s"
 msgstr ""
 
-#: bambora-online-classic.php:637
-msgid "Capture action failed"
+#: bambora-online-classic.php:549
+#, php-format
+msgid "Bambora Online ePay Subscription could not be canceled - %s"
 msgstr ""
 
-#: bambora-online-classic.php:674
-msgid "Delete action failed"
+#: bambora-online-classic.php:566
+msgid "Bambora Online ePay Subscription ID was not found"
 msgstr ""
 
-#: bambora-online-classic.php:707
-msgid "Transaction ID"
+#: bambora-online-classic.php:573
+#, php-format
+msgid ""
+"Subscription successfully Canceled. - Bambora Online ePay Subscription Id: %s"
+msgstr ""
+
+#: bambora-online-classic.php:575
+#, php-format
+msgid "Bambora Online ePay Subscription Id: %s"
 msgstr ""
 
 #: bambora-online-classic.php:715
-msgid "Payment Type"
+#, php-format
+msgid "Bambora Online ePay Payment completed with transaction id %s"
 msgstr ""
 
-#: bambora-online-classic.php:732
-msgid "Authorized amount"
+#: bambora-online-classic.php:740
+#, php-format
+msgid "Bambora Online ePay Subscription changed from: %s to: %s"
 msgstr ""
 
-#: bambora-online-classic.php:739
-msgid "Captured amount"
+#: bambora-online-classic.php:753
+#, php-format
+msgid "Bambora Online ePay Subscription activated with subscription id: %s"
 msgstr ""
 
-#: bambora-online-classic.php:746
-msgid "Credited amount"
+#: bambora-online-classic.php:777
+msgid "Surcharge Fee"
 msgstr ""
 
-#: bambora-online-classic.php:759
-msgid "Capture"
+#: bambora-online-classic.php:823
+#, php-format
+msgid ""
+"Bambora Online ePay Subscription activated with subscription id: %s by order "
+"%s"
 msgstr ""
 
-#: bambora-online-classic.php:764
-msgid "Are you sure you want to delete?"
+#: bambora-online-classic.php:838
+#, php-format
+msgid "Bambora Online ePay Action failed for order %s - %s"
 msgstr ""
 
-#: bambora-online-classic.php:765
-msgid "Delete"
+#: bambora-online-classic.php:901
+msgid "Capture action failed"
 msgstr ""
 
-#: bambora-online-classic.php:774
-msgid "Are you sure you want to credit?"
+#: bambora-online-classic.php:927
+msgid "Delete action failed"
 msgstr ""
 
-#: bambora-online-classic.php:775
-msgid "Credit"
+#: bambora-online-classic.php:974
+#, php-format
+msgid "No transaction was found for order %s"
 msgstr ""
 
-#: bambora-online-classic.php:787
-msgid "TRANSACTION HISTORY"
+#: bambora-online-classic.php:978
+#, php-format
+msgid "The order with id %s could not be loaded"
 msgstr ""
 
-#: bambora-online-classic.php:803
+#: bambora-online-classic.php:1001
 msgid "Get Transaction action failed"
 msgstr ""
 
-#: bambora-online-classic.php:814
-msgid "No transaction was found."
+#: bambora-online-classic.php:1020
+msgid "Transaction ID"
+msgstr ""
+
+#: bambora-online-classic.php:1026
+msgid "Authorized:"
+msgstr ""
+
+#: bambora-online-classic.php:1031
+msgid "Captured:"
+msgstr ""
+
+#: bambora-online-classic.php:1036
+msgid "Refunded:"
+msgstr ""
+
+#: bambora-online-classic.php:1047
+msgid "Are you sure you want to capture the payment?"
+msgstr ""
+
+#: bambora-online-classic.php:1051
+msgid "Capture"
+msgstr ""
+
+#: bambora-online-classic.php:1055
+msgid "Are you sure you want to delete the payment?"
+msgstr ""
+
+#: bambora-online-classic.php:1057
+msgid "Delete"
+msgstr ""
+
+#: bambora-online-classic.php:1061
+msgid "Are you sure you want to refund the payment?"
+msgstr ""
+
+#: bambora-online-classic.php:1065
+msgid "Refund"
+msgstr ""
+
+#: bambora-online-classic.php:1070
+msgid "The amount you entered was in the wrong format."
+msgstr ""
+
+#: bambora-online-classic.php:1072
+msgid "Warning"
+msgstr ""
+
+#: bambora-online-classic.php:1072
+msgid "Correct format is: 1234.56"
+msgstr ""
+
+#: bambora-online-classic.php:1090
+msgid "TRANSACTION HISTORY"
+msgstr ""
+
+#: bambora-online-classic.php:1099
+#, php-format
+msgid "By: %s"
+msgstr ""
+
+#: lib/bambora-online-classic-helper.php:227
+msgid "Thank you for using Bambora Online ePay."
+msgstr ""
+
+#: lib/bambora-online-classic-helper.php:228
+msgid "Please wait..."
 msgstr ""
 
 #. Name of the plugin
@@ -128,7 +183,7 @@ msgid "Bambora Online ePay"
 msgstr ""
 
 #. Description of the plugin
-msgid "A payment gateway for ePay payment solutions"
+msgid "Bambora Online ePay payment gateway for WooCommerce"
 msgstr ""
 
 #. URI of the plugin
@@ -136,7 +191,7 @@ msgid "http://www.epay.dk"
 msgstr ""
 
 #. Author of the plugin
-msgid "ePay (a Bambora company)"
+msgid "Bambora Online"
 msgstr ""
 
 #. Author URI of the plugin
