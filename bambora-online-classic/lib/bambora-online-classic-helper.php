@@ -262,8 +262,8 @@ class Bambora_Online_Classic_Helper
 		}
 
 		// Check exists transactionid!
-		if ( empty( $params['txnid'] ) && !Bambora_Online_Classic_Helper::order_is_subscription( $order ) ) {
-			$message = isset( $params ) ? 'No GET(txnid) was supplied to the system!' : 'Response is null';
+		if ( !isset( $params['txnid'] ) ) {
+			$message = 'No GET(txnid) was supplied to the system!';
 			return false;
 		}
 
