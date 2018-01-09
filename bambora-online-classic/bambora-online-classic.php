@@ -26,7 +26,7 @@ function init_bambora_online_classic() {
 	if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 		return;
 	}
-    
+
 	include( BOCLASSIC_PATH . '/lib/bambora-online-classic-soap.php' );
 	include( BOCLASSIC_PATH . '/lib/bambora-online-classic-helper.php' );
 	include( BOCLASSIC_PATH . '/lib/bambora-online-classic-log.php' );
@@ -488,10 +488,8 @@ function init_bambora_online_classic() {
 
 			if ( is_wp_error( $result ) ) {
 				$message = sprintf( __( 'Bambora Online ePay Subscription could not be authorized for renewal order # %s - %s', 'bambora-online-classic' ), $renewal_order_id, $result->get_error_message( 'bambora_online_classic_error' ) );
-				$renewal_order->add_order_note( $message );
-				$subscription->add_order_note( $message );
+				$renewal_order->update_status( 'failed', $message );
 				$this->_boclassic_log->add( $message );
-				WC_Subscriptions_Manager::process_subscription_payment_failure_on_order( $renewal_order );
 			}
 		}
 
