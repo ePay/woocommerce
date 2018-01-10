@@ -3,7 +3,7 @@
  * Plugin Name: Bambora Online ePay
  * Plugin URI: http://www.epay.dk
  * Description: Bambora Online ePay payment gateway for WooCommerce
- * Version: 4.0.1
+ * Version: 4.0.2
  * Author: Bambora Online
  * Author URI: http://www.epay.dk/epay-payment-solutions
  * Text Domain: bambora-online-classic
@@ -13,7 +13,7 @@
  */
 
 define( 'BOCLASSIC_PATH', dirname( __FILE__ ) );
-define( 'BOCLASSIC_VERSION', '4.0.1' );
+define( 'BOCLASSIC_VERSION', '4.0.2' );
 
 add_action( 'plugins_loaded', 'init_bambora_online_classic', 0 );
 
