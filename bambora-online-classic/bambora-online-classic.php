@@ -142,11 +142,11 @@ function init_bambora_online_classic() {
 				add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 				add_action( 'wp_before_admin_bar_render', array( $this, 'bambora_online_classic_actions' ) );
 			}
-
-			// Subscriptions
-			add_action( 'woocommerce_scheduled_subscription_payment_' . $this->id, array( $this, 'scheduled_subscription_payment' ), 10, 2 );
-			add_action( 'woocommerce_subscription_cancelled_' . $this->id, array( $this, 'subscription_cancellation' ) );
-
+			if ( class_exists( 'WC_Subscriptions_Order' ) ) {
+				// Subscriptions
+				add_action( 'woocommerce_scheduled_subscription_payment_' . $this->id, array( $this, 'scheduled_subscription_payment' ), 10, 2 );
+				add_action( 'woocommerce_subscription_cancelled_' . $this->id, array( $this, 'subscription_cancellation' ) );
+			}
 			// Register styles!
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_wc_bambora_online_classic_admin_styles_and_scripts' ) );
 			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_wc_bambora_online_classic_front_styles' ) );
@@ -531,7 +531,8 @@ function init_bambora_online_classic() {
 				$subscription->add_order_note( $message );
 
 				return true;
-			} catch ( Exception $ex ) {
+			}
+			catch ( Exception $ex ) {
 				return new WP_Error( 'bambora_online_classic_error', $ex->getMessage() );
 			}
 		}
@@ -581,7 +582,8 @@ function init_bambora_online_classic() {
 					}
 				}
 				return true;
-			} catch ( Exception $ex ) {
+			}
+			catch ( Exception $ex ) {
 				return new WP_Error( 'bambora_online_classic_error', $ex->getMessage() );
 			}
 		}
@@ -662,7 +664,8 @@ function init_bambora_online_classic() {
 					$this->_boclassic_log->add( $params );
 					$this->_boclassic_log->separator();
 				}
-			} catch (Exception $ex) {
+			}
+			catch (Exception $ex) {
 				$message = 'Callback failed Reason: ' . $ex->getMessage();
 				$response_code = 500;
 				$this->_boclassic_log->separator();
@@ -694,7 +697,8 @@ function init_bambora_online_classic() {
 					$action = $this->process_standard_payments( $order, $params );
 					$type = "Standard Payment {$action}";
 				}
-			} catch ( Exception $e ) {
+			}
+			catch ( Exception $e ) {
 				throw $e;
 			}
 
@@ -754,7 +758,7 @@ function init_bambora_online_classic() {
 					$order->add_order_note( sprintf( __( 'Bambora Online ePay Subscription activated with subscription id: %s', 'bambora-online-classic' ), $bambora_subscription_id ) );
 					$order->payment_complete( $bambora_transaction_id );
 					$this->save_subscription_meta( $order, $bambora_subscription_id, false );
-                    do_action( 'processed_subscription_payments_for_order', $order );
+					do_action( 'processed_subscription_payments_for_order', $order );
 				} else {
 					$action = 'activated (Called multiple times)';
 				}
@@ -934,7 +938,8 @@ function init_bambora_online_classic() {
 						}
 						break;
 				}
-			} catch (Exception $ex) {
+			}
+			catch (Exception $ex) {
 				return new WP_Error( 'bambora_online_classic_error', $ex->getMessage() );
 			}
 			return true;
@@ -980,7 +985,8 @@ function init_bambora_online_classic() {
 					$html = sprintf( __( 'The order with id %s could not be loaded', 'bambora-online-classic' ), $order_id );
 					$this->_boclassic_log->add( $html );
 				}
-			} catch ( Exception $ex ) {
+			}
+			catch ( Exception $ex ) {
 				$html = $ex->getMessage();
 				$this->_boclassic_log->add( $html );
 			}
@@ -1017,30 +1023,36 @@ function init_bambora_online_classic() {
 				$available_for_capture = $total_authorized - $total_captured;
 				$transaction_status = $transaction->status;
 
+				$card_info = Bambora_Online_Classic_Helper::get_cardtype_groupid_and_name($transaction->cardtypeid);
+				$card_group_id = $card_info[1];
+				$card_name = $card_info[0];
+
 				$html = '<div class="boclassic-info">';
+				if($card_group_id && $card_group_id != '-1') {
+					$html .= '<img class="boclassic-paymenttype-img" src="https://d25dqh6gpkyuw6.cloudfront.net/paymentlogos/external/' . $card_group_id . '.png" alt="' . $card_name . '" title="' . $card_name . '" />';
+				}
 				$html .= '<div class="boclassic-transactionid">';
 				$html .= '<p>' . __( 'Transaction ID', 'bambora-online-classic' ) . '</p>';
 				$html .= '<p>' . $transaction->transactionid . '</p>';
 				$html .= '</div>';
-				$html .= '<br />';
+				$html .= '<div class="boclassic-paymenttype">';
+				$html .= '<p>' . __( 'Payment Type', 'bambora-online-classic' ) . '</p>';
+				$html .= '<p>' . $card_name . '</p>';
+				$html .= '</div>';
 
 				$html .= '<div class="boclassic-info-overview">';
 				$html .= '<p>' . __( 'Authorized:', 'bambora-online-classic' ) . '</p>';
 				$html .= '<p>' . wc_format_localized_price( $total_authorized ) . ' ' . $currency . '</p>';
 				$html .= '</div>';
-
 				$html .= '<div class="boclassic-info-overview">';
 				$html .= '<p>' . __( 'Captured:', 'bambora-online-classic' ) . '</p>';
 				$html .= '<p>' . wc_format_localized_price( $total_captured ) . ' ' . $currency . '</p>';
 				$html .= '</div>';
-
 				$html .= '<div class="boclassic-info-overview">';
 				$html .= '<p>' . __( 'Refunded:', 'bambora-online-classic' ) . '</p>';
 				$html .= '<p>' . wc_format_localized_price( $total_credited ) . ' ' . $currency . '</p>';
 				$html .= '</div>';
-
 				$html .= '</div>';
-				$html .= '<br />';
 
 				if ( $transaction_status === 'PAYMENT_NEW' || ( $transaction_status === 'PAYMENT_CAPTURED' && $total_credited === 0 ) ) {
 					$html .= '<div class="boclassic-action-container">';
@@ -1109,7 +1121,8 @@ function init_bambora_online_classic() {
 				}
 
 				return $html;
-			} catch ( Exception $ex ) {
+			}
+			catch ( Exception $ex ) {
 				throw $ex;
 			}
 		}

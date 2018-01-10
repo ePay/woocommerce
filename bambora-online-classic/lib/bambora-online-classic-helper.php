@@ -603,4 +603,64 @@ class Bambora_Online_Classic_Helper
 				. $message . '</div>';
 		return ent2ncr( $html );
 	}
+
+    /**
+     * Get the Card type group id and Name by card type id
+     * @param int $card_type_id
+     * @return array
+     */
+    public static function get_cardtype_groupid_and_name( $card_type_id ) {
+        $card_type_array = array(
+           1 => array('Dankort', '1'),
+           2 => array('Visa/Dankort', '1'),
+           3 => array('Visa Electron', '3'),
+           4 => array('Mastercard', '4'),
+           5 => array('Mastercard', '4'),
+           6 => array('Visa Electron', '3'),
+           7 => array('JCB', '6'),
+           8 => array('Diners Club', '8'),
+           9 => array('Maestro', '7'),
+           10 => array('American Express', '9'),
+           11 => array('Unknown', '15'),
+           12 => array('eDankort', '2'),
+           13 => array('Diners Club', '8'),
+           14 => array('American Express','9'),
+           15 => array('Maestro', '7'),
+           16 => array('Forbrugsforeningen', '11'),
+           17 => array('ewire', '10'),
+           18 => array('Visa', '3'),
+           19 => array('IKANO Kort', '15'),
+           20 => array('Other', '15'),
+           21 => array('Nordea e-betaling', '12'),
+           22 => array('Danske Netbetalinger', '13'),
+           23 => array('BG Netbetalinger', '15'),
+           24 => array('LIC/Mastercard', '4'),
+           25 => array('LIC/Mastercard', '4'),
+           26 => array('PayPal', '14'),
+           27 => array('MobilPenge','16'),
+           28 => array('Klarna', '17'),
+           29 => array('Svea', '18'),
+           30 => array('SEB Direktbetalning', '19'),
+           31 => array('Nordea SE E-payment', '20'),
+           32 => array('Handelsbanken SE Direktbetalningar', '21'),
+           33 => array('Swedbank Direktbetalningar', '22'),
+           34 => array('ViaBill', '23'),
+           35 => array('Beeptify', '24'),
+           36 => array('iDeal', '25'),
+           37 => array('Oberthur', '26'),
+           38 => array('4T', '27'),
+           39 => array('Brandts', '28'),
+           40 => array('MobilePay','29'),
+           41 => array('Resurs', '30'),
+           42 => array('Ekspres Bank', '31'),
+           43 => array('Swipp', '32'),
+           44 => array('Masterpass', '34')
+           );
+
+           if($card_type_id == null || !key_exists( $card_type_id, $card_type_array ) ) {
+               return array('Unknown', '-1');
+           }
+           return $card_type_array[$card_type_id];
+    }
+
 }
