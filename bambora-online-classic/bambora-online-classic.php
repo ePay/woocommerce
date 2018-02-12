@@ -3,7 +3,7 @@
  * Plugin Name: Bambora Online ePay
  * Plugin URI: http://www.epay.dk
  * Description: Bambora Online ePay payment gateway for WooCommerce
- * Version: 4.0.2
+ * Version: 4.0.3
  * Author: Bambora Online
  * Author URI: http://www.epay.dk/epay-payment-solutions
  * Text Domain: bambora-online-classic
@@ -13,7 +13,7 @@
  */
 
 define( 'BOCLASSIC_PATH', dirname( __FILE__ ) );
-define( 'BOCLASSIC_VERSION', '4.0.2' );
+define( 'BOCLASSIC_VERSION', '4.0.3' );
 
 add_action( 'plugins_loaded', 'init_bambora_online_classic', 0 );
 
@@ -392,12 +392,17 @@ function init_bambora_online_classic() {
 			$invoice_order_lines = array();
 			foreach ( $items as $item ) {
 				$item_total = $order->get_line_total( $item, false, true );
+                if($item['qty'] > 1) {
+                    $item_price = $item_total / $item['qty'];
+                } else {
+                    $item_price = $item_total;
+                }
 				$item_vat_amount = $order->get_line_tax( $item );
 				$invoice_order_lines[] = array(
 						'id' => $item['product_id'],
 						'description' => Bambora_Online_Classic_Helper::json_value_remove_special_characters( $item['name'] ),
 						'quantity' => $item['qty'],
-						'price' => Bambora_Online_Classic_Helper::convert_price_to_minorunits( $item_total, $minorunits, $this->roundingmode ),
+						'price' => Bambora_Online_Classic_Helper::convert_price_to_minorunits( $item_price, $minorunits, $this->roundingmode ),
 						'vat' => $item_vat_amount > 0 ? ( $item_vat_amount / $item_total ) * 100 : 0,
 					);
 			}
