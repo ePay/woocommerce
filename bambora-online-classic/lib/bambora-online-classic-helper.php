@@ -19,6 +19,7 @@ class Bambora_Online_Classic_Helper
 	const BAMBORA_ONLINE_CLASSIC_TRANSACTION_ID_LEGACY = 'Transaction ID';
 	const BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID = 'bambora_online_classic_subscription_id';
 	const BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID_LEGACY = 'Subscription ID';
+    const BAMBORA_ONLINE_CLASSIC_PAYMENT_TYPE_ID = 'Payment Type ID';
 
 	/**
 	 * Returns the module header
