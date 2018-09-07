@@ -3,7 +3,7 @@
  * Plugin Name: Bambora Online ePay
  * Plugin URI: http://www.epay.dk
  * Description: Bambora Online ePay payment gateway for WooCommerce
- * Version: 4.0.6
+ * Version: 5.0.0
  * Author: Bambora Online
  * Author URI: http://www.epay.dk/epay-payment-solutions
  * Text Domain: bambora-online-classic
@@ -13,7 +13,7 @@
  */
 
 define( 'BOCLASSIC_PATH', dirname( __FILE__ ) );
-define( 'BOCLASSIC_VERSION', '4.0.6' );
+define( 'BOCLASSIC_VERSION', '5.0.0' );
 
 add_action( 'plugins_loaded', 'init_bambora_online_classic', 0 );
 
@@ -113,7 +113,6 @@ function init_bambora_online_classic() {
 			$this->description = array_key_exists( 'description', $this->settings ) ? $this->settings['description'] : 'Pay using Bambora Online ePay';
 			$this->merchant = array_key_exists( 'merchant', $this->settings ) ? $this->settings['merchant'] : '';
 			$this->windowid = array_key_exists( 'windowid', $this->settings ) ? $this->settings['windowid'] : '1';
-			$this->windowstate = array_key_exists( 'windowstate', $this->settings ) ? $this->settings['windowstate'] : 1;
 			$this->md5key = array_key_exists( 'md5key', $this->settings ) ? $this->settings['md5key'] : '';
 			$this->instantcapture = array_key_exists( 'instantcapture', $this->settings ) ? $this->settings['instantcapture'] : 'no';
 			$this->group = array_key_exists( 'group', $this->settings ) ? $this->settings['group'] : '';
@@ -232,13 +231,6 @@ function init_bambora_online_classic() {
 								'type' => 'text',
 								'default' => '',
 								'custom_attributes' => array( 'autocomplete' => 'new-password' ),// Fix for input field gets populated with saved login info
-							),
-				'windowstate' => array(
-								'title' => 'Window state',
-								'type' => 'select',
-								'options' => array( 1 => 'Overlay', 3 => 'Full screen' ),
-								'description' => 'Please select if you want the Payment window shown as an overlay or as full screen.',
-								'default' => 1,
 							),
 			   'instantcapture' => array(
 								'title' => 'Instant capture',
@@ -598,20 +590,11 @@ function init_bambora_online_classic() {
 			$order_total = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_total() : $order->order_total;
 			$minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $order_currency );
 
-            $mobile = Bambora_Online_Classic_Helper::yes_no_to_int( $this->enablemobilepaymentwindow );
-            $window_state = $this->windowstate;
-            if($mobile === 1 && $window_state === "1") {
-                $is_mobile = $this->is_mobile_device();
-                if($is_mobile === 1) {
-                    $window_state = "3";
-                }
-            }
-
 			$epay_args = array(
 				'encoding' => 'UTF-8',
 				'cms' => Bambora_Online_Classic_Helper::get_module_header_info(),
-				'windowstate' => $window_state,
-				'mobile' => $mobile,
+				'windowstate' => "3",
+				'mobile' => Bambora_Online_Classic_Helper::yes_no_to_int( $this->enablemobilepaymentwindow ),
 				'merchantnumber' => $this->merchant,
 				'windowid' => $this->windowid,
 				'currency' => $order_currency,
@@ -645,18 +628,10 @@ function init_bambora_online_classic() {
 			}
 
 			$epay_args_json = wp_json_encode( $epay_args );
-			$payment_html = Bambora_Online_Classic_Helper::create_bambora_online_classic_payment_html( $epay_args_json, $epay_args['cancelurl'], $window_state );
+			$payment_html = Bambora_Online_Classic_Helper::create_bambora_online_classic_payment_html( $epay_args_json );
 
 			echo ent2ncr( $payment_html );
 		}
-
-        /**
-         * Check if the user is using a mobile device
-         * @return integer
-         */
-        public function is_mobile_device() {
-            return preg_match( "/(android|iphone|blackberry|mobile|windows ce|opera mini|palm|opera mobi)/i", $_SERVER["HTTP_USER_AGENT"] );
-        }
 
 		/**
          * Check for epay IPN Response

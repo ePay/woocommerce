@@ -219,16 +219,14 @@ class Bambora_Online_Classic_Helper
 	 * Create the Bambora Online Classic payment html
 	 *
 	 * @param mixed $json_data
-	 * @param mixed $cancel_url
-	 * @param mixed $window_state
 	 * @return string
 	 */
-	public static function create_bambora_online_classic_payment_html( $json_data, $cancel_url, $window_state ) {
+	public static function create_bambora_online_classic_payment_html( $json_data ) {
 		$html = '<section>';
 		$html .= '<h3>' . __( 'Thank you for using Bambora Online ePay.', 'bambora-online-classic' ) . '</h3>';
 		$html .= '<p>' . __( 'Please wait...', 'bambora-online-classic' ) . '</p>';
 		$html .= sprintf( '<script type="text/javascript" src="%s" charset="UTF-8"></script>', self::BOCLASSIC_instance()->plugin_url( '/scripts/bambora-online-classic-payment-window.js' ) );
-		$html .= sprintf( '<script type="text/javascript" charset="UTF-8">BamboraOnlineClassicPaymentWindow.init(%s, "%s", %s);</script>', $json_data, $cancel_url, $window_state );
+		$html .= sprintf( '<script type="text/javascript" charset="UTF-8">BamboraOnlineClassicPaymentWindow.init(%s);</script>', $json_data );
 		$html .= '<script type="text/javascript" src="https://ssl.ditonlinebetalingssystem.dk/integration/ewindow/paymentwindow.js" charset="UTF-8"></script>';
 		$html .= '</section>';
 		return $html;

@@ -14,24 +14,13 @@
 var BamboraOnlineClassicPaymentWindow = BamboraOnlineClassicPaymentWindow ||
 (function() {
 	var _epayArgsJson = {};
-	var _cancelUrl = "";
-	var _windowState = 0;
-
 	return {
-		init: function (epayArgsJson, cancelUrl, windowState) {
+		init: function (epayArgsJson) {
 			_epayArgsJson = epayArgsJson;
-			_cancelUrl = cancelUrl;
-			_windowState = windowState;
 		},
 		getJsonData: function() {
 			return _epayArgsJson;
 		},
-		getCancelUrl: function() {
-			return _cancelUrl;
-		},
-		getWindowState: function() {
-			return _windowState;
-		}
 	}
 }());
 
@@ -40,12 +29,7 @@ var timerOpenWindow;
 
 function PaymentWindowReady() {
 	paymentwindow = new PaymentWindow(BamboraOnlineClassicPaymentWindow.getJsonData());
-	if (BamboraOnlineClassicPaymentWindow.getWindowState() === 1) {
-		paymentwindow.on('close',
-			function() {
-				window.location.href = BamboraOnlineClassicPaymentWindow.getCancelUrl();
-			});
-	}
+
 	isPaymentWindowReady = true;
 }
 function openPaymentWindow() {
