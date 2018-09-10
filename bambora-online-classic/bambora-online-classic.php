@@ -81,6 +81,7 @@ function init_bambora_online_classic() {
 				'subscription_amount_changes',
 				'subscription_date_changes',
 				'subscription_payment_method_change_customer',
+				'multiple_subscriptions'
 				);
 
 			// Init the Bambora Online Classic logger

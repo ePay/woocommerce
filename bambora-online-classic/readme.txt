@@ -49,6 +49,7 @@ With Bambora Online ePay for WooCommerce, you are able to integrate the Bambora 
 == Changelog ==
 = 5.0.0 =
 * The payment window can no longer be displayed as an Overlay and will now always be displayed as Full Screen
+* Adds support for multiple subscription sign-up
 
 = 4.0.6 =
 * Fix for Chrome Iframe redirect issue when using mobile payment window
