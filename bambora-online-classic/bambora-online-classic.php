@@ -600,8 +600,8 @@ function init_bambora_online_classic() {
 				'windowid' => $this->windowid,
 				'currency' => $order_currency,
 				'amount' => Bambora_Online_Classic_Helper::convert_price_to_minorunits( $order_total, $minorunits, $this->roundingmode ),
-				'orderid' => str_replace( _x( '#', 'hash before order number', 'woocommerce' ), '', $order->get_order_number() ),
-				'accepturl' => Bambora_Online_Classic_Helper::get_accept_url( $order ),
+				'orderid' => $this->clean_order_number($order->get_order_number()),
+                'accepturl' => Bambora_Online_Classic_Helper::get_accept_url( $order ),
 				'cancelurl' => Bambora_Online_Classic_Helper::get_decline_url( $order ),
 				'callbackurl' => apply_filters( 'bambora_online_classic_callback_url', Bambora_Online_Classic_Helper::get_bambora_online_classic_callback_url( $order_id ) ),
 				'mailreceipt' => $this->authmail,
@@ -633,6 +633,16 @@ function init_bambora_online_classic() {
 
 			echo ent2ncr( $payment_html );
 		}
+
+        /**
+         * Removes any special charactors from the order number
+         *
+         * @param string $order_number
+         * @return string
+         */
+        protected function clean_order_number($order_number) {
+            return preg_replace('/[^a-z\d ]/i', "", $order_number );
+        }
 
 		/**
          * Check for epay IPN Response
