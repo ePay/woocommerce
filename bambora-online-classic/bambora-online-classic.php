@@ -3,7 +3,7 @@
  * Plugin Name: Bambora Online ePay
  * Plugin URI: http://www.epay.dk
  * Description: Bambora Online ePay payment gateway for WooCommerce
- * Version: 5.0.0
+ * Version: 5.0.1
  * Author: Bambora Online
  * Author URI: http://www.epay.dk/epay-payment-solutions
  * Text Domain: bambora-online-classic
@@ -95,9 +95,6 @@ function init_bambora_online_classic() {
 
 			// Initilize Bambora Online Classic Settings
 			$this->init_bambora_online_classic_settings();
-
-			// Set description for checkout page!
-			$this->set_bambora_online_classic_description_for_checkout();
 
 			if ( $this->remoteinterface === 'yes' ) {
 				$this->supports = array_merge( $this->supports, array( 'refunds' ) );
@@ -301,29 +298,16 @@ function init_bambora_online_classic() {
          * There are no payment fields for epay, but we want to show the description if set.
          **/
 		public function payment_fields() {
-			if ( $this->description ) {
-				$text_replace = wptexturize( $this->description );
-				$text_remove_double_lines = wpautop( $text_replace );
-
-				echo $text_remove_double_lines;
-			}
-		}
-
-		/**
-         * Set the WC Payment Gateway description for the checkout page
-         */
-		public function set_bambora_online_classic_description_for_checkout() {
-			global $woocommerce;
-			$merchant_number = $this->merchant;
-			$cart = Bambora_Online_Classic_Helper::is_woocommerce_3() ? WC()->cart : $woocommerce->cart;
-			if ( ! $cart || ! $merchant_number ) {
-				return;
-			}
-			$html = '<div id="boclassic_card_logos">';
-			$html .= '<script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber=' . $merchant_number . '&direction=2&padding=2&rows=1&logo=0&showdivs=0&divid=boclassic_card_logos"></script>';
-			$html .= '</div>';
-
-			$this->description .= $html;
+    		$text_replace = wptexturize( $this->description );
+			$paymentFieldDescription = wpautop( $text_replace );
+            $paymentLogoes = '<div id="boclassic_card_logos">';
+            $merchant_number = $this->merchant;
+            if ( $merchant_number ) {
+                $paymentLogoes .= '<script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber=' . $merchant_number . '&direction=2&padding=2&rows=2&showdivs=0&logo=0&divid=boclassic_card_logos"></script>';
+            }
+            $paymentLogoes .= '</div>';
+            $paymentFieldDescription .= $paymentLogoes;
+			echo $paymentFieldDescription;
 		}
 
 		/**
