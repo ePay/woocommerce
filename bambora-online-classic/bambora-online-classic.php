@@ -914,6 +914,8 @@ function init_bambora_online_classic() {
 								$message .= ' - ' . $webservice->get_pbs_error( $this->merchant, $capture_response->pbsResponse );
 							}
 							return new WP_Error( 'bambora_online_classic_error', $message );
+						} else {
+							do_action( 'bo_after_capture', $order_id );
 						}
 						break;
 					case 'refund':
@@ -928,6 +930,8 @@ function init_bambora_online_classic() {
 								$message .= ' - ' . $webservice->get_pbs_error( $this->merchant, $refund_response->pbsResponse );
 							}
 							return new WP_Error( 'bambora_online_classic_error', $message );
+						}  else {
+							do_action( 'bo_after_chargeback', $order_id );
 						}
 						break;
 					case 'delete':
@@ -938,6 +942,8 @@ function init_bambora_online_classic() {
 								$message .= ' - ' . $webservice->get_epay_error( $this->merchant, $delete_response->epayresponse );
 							}
 							return new WP_Error( 'bambora_online_classic_error', $message );
+						} else {
+							do_action( 'bo_after_delete', $order_id );
 						}
 						break;
 				}
