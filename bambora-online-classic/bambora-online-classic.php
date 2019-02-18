@@ -915,7 +915,7 @@ function init_bambora_online_classic() {
 							}
 							return new WP_Error( 'bambora_online_classic_error', $message );
 						} else {
-							do_action( 'bo_after_capture', $order_id );
+							do_action( 'bambora_online_classic_after_capture', $order_id );
 						}
 						break;
 					case 'refund':
@@ -931,7 +931,7 @@ function init_bambora_online_classic() {
 							}
 							return new WP_Error( 'bambora_online_classic_error', $message );
 						}  else {
-							do_action( 'bo_after_chargeback', $order_id );
+							do_action( 'bambora_online_classic_after_refund', $order_id );
 						}
 						break;
 					case 'delete':
@@ -943,7 +943,7 @@ function init_bambora_online_classic() {
 							}
 							return new WP_Error( 'bambora_online_classic_error', $message );
 						} else {
-							do_action( 'bo_after_delete', $order_id );
+							do_action( 'bambora_online_classic_after_delete', $order_id );
 						}
 						break;
 				}
