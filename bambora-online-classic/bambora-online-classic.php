@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: Bambora Online ePay
- * Plugin URI: http://www.epay.dk
+ * Plugin URI: https://www.epay.dk
  * Description: Bambora Online ePay payment gateway for WooCommerce
- * Version: 5.0.1
+ * Version: 5.0.2
  * Author: Bambora Online
- * Author URI: http://www.epay.dk/epay-payment-solutions
+ * Author URI: https://www.epay.dk/epay-payment-solutions
  * Text Domain: bambora-online-classic
  *
  * @author Bambora
@@ -13,7 +13,7 @@
  */
 
 define( 'BOCLASSIC_PATH', dirname( __FILE__ ) );
-define( 'BOCLASSIC_VERSION', '5.0.0' );
+define( 'BOCLASSIC_VERSION', '5.0.2' );
 
 add_action( 'plugins_loaded', 'init_bambora_online_classic', 0 );
 
@@ -69,6 +69,7 @@ function init_bambora_online_classic() {
 		public function __construct() {
 			$this->id = 'epay_dk';
 			$this->method_title = 'Bambora Online ePay';
+            $this->method_description = 'Bambora Online ePay enables easy and secure payments on your shop';
 			$this->icon = WP_PLUGIN_URL . '/' . plugin_basename( dirname( __FILE__ ) ) . '/bambora-logo.svg';
 			$this->has_fields = false;
 
