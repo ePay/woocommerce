@@ -180,13 +180,17 @@ class Bambora_Online_Classic_Helper
 	}
 
 	/**
-	 * Returns the Accept url
-	 *
-	 * @param WC_Order $order
-	 */
+     * Returns the Accept url
+     *
+     * @param WC_Order $order
+     */
 	public static function get_accept_url( $order ) {
-		if ( method_exists( $order, 'get_checkout_order_received_url' ) ) {
-			return str_replace( '&amp;', '&', $order->get_checkout_order_received_url() );
+        if ( method_exists( $order, 'get_checkout_order_received_url' ) ) {
+			$acceptUrlRaw = $order->get_checkout_order_received_url();
+            $acceptUrlTemp = str_replace( '&amp;', '&', $acceptUrlRaw );
+            $acceptUrl = str_replace( '&#038', '&', $acceptUrlTemp );
+
+            return $acceptUrl;
 		}
 
 		return add_query_arg( 'key', $order->order_key, add_query_arg(
@@ -203,7 +207,11 @@ class Bambora_Online_Classic_Helper
 	 */
 	public static function get_decline_url( $order ) {
 		if ( method_exists( $order, 'get_cancel_order_url' ) ) {
-			return str_replace( '&amp;', '&', $order->get_cancel_order_url() );
+			$declineUrlRaw = $order->get_cancel_order_url();
+            $declineUrlTemp = str_replace( '&amp;', '&', $declineUrlRaw );
+            $declineUrl = str_replace( '&#038', '&', $declineUrlTemp );
+            
+            return $declineUrl;
 		}
 
 		return add_query_arg( 'key', $order->get_order_key(), add_query_arg(
