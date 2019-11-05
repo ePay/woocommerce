@@ -2,8 +2,8 @@
 Contributors: bambora
 Tags: woocommerce, woo commerce, payment, payment gateway, gateway, subscription, subscriptions, bambora, epay, integration, woocommerce bambora, woocommerce epay, woocommerce bambora online classic, psp
 Requires at least: 4.0.0
-Tested up to: 5.1.0
-Stable tag: 5.0.3
+Tested up to: 5.2.4
+Stable tag: 5.0.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -47,6 +47,8 @@ With Bambora Online ePay for WooCommerce, you are able to integrate the Bambora 
 <a href="https://woocommerce.wpguiden.dk/en/configuration">Click here for more information about **Settings**</a>
 
 == Changelog ==
+= 5.0.4 =
+* Adds fix for declineurl using encoded version of & 
 
 = 5.0.3 =
 * Fix for unsupported date/time function in WC below 3.1 
