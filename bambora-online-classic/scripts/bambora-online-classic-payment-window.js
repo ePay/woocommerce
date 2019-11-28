@@ -38,8 +38,9 @@ function openPaymentWindow() {
 		paymentwindow.open();
 	}
 }
-document.onreadystatechange = function () {
-	if (document.readyState === "complete") {
-		timerOpenWindow = setInterval("openPaymentWindow()", 500);
-	}
-}
+
+document.addEventListener('readystatechange', function (e) {
+    if (event.target.readyState === "complete") {
+        timerOpenWindow = setInterval("openPaymentWindow()", 500);
+    }
+});
