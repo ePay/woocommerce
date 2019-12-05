@@ -54,6 +54,7 @@ With Bambora Online ePay for WooCommerce, you are able to integrate the Bambora 
 * Adds Bulk capture on orders by order status Completed
 * Fix for no status messages in Administration
 * Refactoring of capture, refund and delete flows
+* Fix for document ready failed on some themes. 
 
 = 5.0.4 =
 * Adds fix for declineurl using encoded version of & 
