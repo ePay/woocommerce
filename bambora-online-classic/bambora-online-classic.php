@@ -332,7 +332,7 @@ function init_bambora_online_classic() {
                 $this->_boclassic_log->add( $message );
                 Bambora_Online_Classic_Helper::add_admin_notices(Bambora_Online_Classic_Helper::ERROR, $message);
             } else {
-                $message = __( "The Capture action was a success for order {$order_id} ", 'bambora-online-classic' );
+                $message = sprintf( __( 'The Capture action was a success for order %s', 'bambora-online-classic' ), $order_id );
                 Bambora_Online_Classic_Helper::add_admin_notices(Bambora_Online_Classic_Helper::SUCCESS, $message);
             }
         }
@@ -884,7 +884,7 @@ function init_bambora_online_classic() {
                     Bambora_Online_Classic_Helper::add_admin_notices(Bambora_Online_Classic_Helper::ERROR, $message);
                 } else {
                     global $post;
-                    $message = __( "The {$action} action was a success for order {$order_id }", 'bambora-online-classic' );
+                    $message = sprintf( __( 'The %s action was a success for order %s', 'bambora-online-classic' ), $action, $order_id );
                     Bambora_Online_Classic_Helper::add_admin_notices(Bambora_Online_Classic_Helper::SUCCESS, $message, true);
                     $url = admin_url( 'post.php?post=' . $post->ID . '&action=edit' );
                     wp_safe_redirect( $url );
@@ -978,7 +978,7 @@ function init_bambora_online_classic() {
                 do_action( 'bambora_online_classic_after_capture', $order_id );
                 return true;
             } else {
-                $message = __( "Capture action failed for order {$order_id}", 'bambora-online-classic' );
+                $message = sprintf( __( 'Capture action failed for order %s', 'bambora-online-classic' ), $order_id );
                 if ( $capture_response->epayresponse != '-1' ) {
                     $message .= ' - ' . $webservice->get_epay_error( $this->merchant, $capture_response->epayresponse );
                 } elseif ( $capture_response->pbsResponse != '-1' ) {
@@ -1016,7 +1016,7 @@ function init_bambora_online_classic() {
                 do_action( 'bambora_online_classic_after_refund', $order_id );
                 return true;
             } else {
-                $message = __( "Refund action failed for order {$order_id}", 'bambora-online-classic' );
+                $message = sprintf( __( 'Refund action failed for order %s', 'bambora-online-classic' ), $order_id );
                 if ( $refund_response->epayresponse != '-1' ) {
                     $message .= ' - ' . $webservice->get_epay_error( $this->merchant, $refund_response->epayresponse );
                 } elseif ( $refund_response->pbsResponse != '-1' ) {
@@ -1043,7 +1043,7 @@ function init_bambora_online_classic() {
                 do_action( 'bambora_online_classic_after_delete', $order_id );
                 return true;
             } else {
-                $message = __( 'Delete action failed', 'bambora-online-classic' );
+                $message = sprintf( __( 'Delete action failed for order %s', 'bambora-online-classic' ), $order_id );
                 if ( $delete_response->epayresponse != '-1' ) {
                     $message .= ' - ' . $webservice->get_epay_error( $this->merchant, $delete_response->epayresponse );
                 }
