@@ -692,13 +692,13 @@ class Bambora_Online_Classic_Helper
 
     /**
      * Build the list of notices to display on the administration
-     * 
-     * @param string $type 
-     * @param string $message 
-     * @param bool $keep_post 
+     *
+     * @param string $type
+     * @param string $message
+     * @param bool $keep_post
      */
     public static function add_admin_notices($type, $message, $keep_post = false) {
-        $message = new Admin_Message($type, $message);
+        $message = array( "type" => $type, "message" => $message);
         $messages = get_option(self::BAMBORA_ONLINE_CLASSIC_STATUS_MESSAGES, false);
         if(!$messages) {
             update_option(self::BAMBORA_ONLINE_CLASSIC_STATUS_MESSAGES, array($message));
@@ -711,7 +711,7 @@ class Bambora_Online_Classic_Helper
 
     /**
      * Echo the notices to the Administration
-     * 
+     *
      * @return void
      */
     public static function echo_admin_notices(){
@@ -720,22 +720,12 @@ class Bambora_Online_Classic_Helper
             return;
         }
         foreach($messages as $message) {
-            echo Bambora_Online_Classic_Helper::message_to_html( $message->type, $message->message );
+            echo Bambora_Online_Classic_Helper::message_to_html( $message['type'], $message['message'] );
         }
         if(!get_option( self::BAMBORA_ONLINE_CLASSIC_STATUS_MESSAGES_KEEP_FOR_POST, false )) {
             delete_option( self::BAMBORA_ONLINE_CLASSIC_STATUS_MESSAGES );
         } else {
             delete_option( self::BAMBORA_ONLINE_CLASSIC_STATUS_MESSAGES_KEEP_FOR_POST );
         }
-    }
-}
-
-class Admin_Message{
-    public $type;
-    public $message;
-
-    public function __construct($type, $message){
-        $this->type = $type;
-        $this->message = $message;
     }
 }

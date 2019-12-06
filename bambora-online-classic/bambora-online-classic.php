@@ -319,6 +319,10 @@ function init_bambora_online_classic() {
          * @param mixed $order_id
          */
         public function bambora_online_classic_order_status_completed($order_id){
+            if( !$this->module_check( $order_id ) ) {
+                return;
+            }
+
             $order = wc_get_order( $order_id );
             $order_total = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_total() : $order->order_total;
             $capture_result = $this->bambora_online_classic_capture_payment($order_id, $order_total, '');
@@ -470,7 +474,6 @@ function init_bambora_online_classic() {
 
             $refund_result = $this->bambora_online_classic_refund_payment($order_id, $amount, '');
             if ( is_wp_error( $refund_result ) ) {
-                $message = $refund_result->get_error_message( 'bambora_online_classic_error' );
                 return $refund_result;
             } else {
                 $message = __( "The Refund action was a success for order {$order_id}", 'bambora-online-classic' );
@@ -967,8 +970,6 @@ function init_bambora_online_classic() {
             $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $currency );
             $amount = str_replace( ',', '.', $amount );
             $amount_in_minorunits = Bambora_Online_Classic_Helper::convert_price_to_minorunits( $amount, $minorunits, $this->roundingmode );
-
-
             $transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
 
             $webservice = new Bambora_Online_Classic_Soap( $this->remotepassword );
@@ -1057,17 +1058,18 @@ function init_bambora_online_classic() {
         public function bambora_online_classic_meta_boxes() {
             global $post;
             $order_id = $post->ID;
-            $payment_method = get_post_meta( $order_id, '_payment_method', true );
-            if ( $this->id === $payment_method ) {
-                add_meta_box(
-                    'epay-payment-actions',
-                    'Bambora Online ePay',
-                    array( &$this, 'bambora_online_classic_meta_box_payment' ),
-                    'shop_order',
-                    'side',
-                    'high'
-                );
+            if( !$this->module_check( $order_id ) ) {
+                return;
             }
+
+            add_meta_box(
+                'epay-payment-actions',
+                'Bambora Online ePay',
+                array( &$this, 'bambora_online_classic_meta_box_payment' ),
+                'shop_order',
+                'side',
+                'high'
+            );
         }
 
         /**
@@ -1244,6 +1246,11 @@ function init_bambora_online_classic() {
          */
         public function get_boclassic_logger() {
             return $this->_boclassic_log;
+        }
+
+        public function module_check($order_id) {
+            $payment_method = get_post_meta( $order_id, '_payment_method', true );
+            return $this->id === $payment_method;
         }
 
         /**
