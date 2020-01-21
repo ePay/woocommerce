@@ -124,6 +124,7 @@ function init_bambora_online_classic() {
             $this->enablemobilepaymentwindow = array_key_exists( 'enablemobilepaymentwindow', $this->settings ) ? $this->settings['enablemobilepaymentwindow'] : 'yes';
             $this->roundingmode = array_key_exists( 'roundingmode', $this->settings ) ? $this->settings['roundingmode'] : Bambora_Online_Classic_Helper::ROUND_DEFAULT;
             $this->captureonstatuscomplete = array_key_exists( 'captureonstatuscomplete', $this->settings ) ? $this->settings['captureonstatuscomplete'] : 'no';
+            $this->override_subscription_need_payment = array_key_exists( 'overridesubscriptionneedpayment', $this->settings ) ? $this->settings['overridesubscriptionneedpayment'] : 'yes';
         }
 
         /**
@@ -134,6 +135,8 @@ function init_bambora_online_classic() {
             add_action( 'woocommerce_api_' . strtolower( get_class() ), array( $this, 'bambora_online_classic_callback' ) );
             add_action( 'woocommerce_receipt_' . $this->id, array( $this, 'receipt_page' ) );
             if ( is_admin() ) {
+                add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+
                 if( $this->remoteinterface == 'yes' ) {
                     add_action( 'add_meta_boxes', array( $this, 'bambora_online_classic_meta_boxes' ) );
                     add_action( 'wp_before_admin_bar_render', array( $this, 'bambora_online_classic_actions' ) );
@@ -143,13 +146,17 @@ function init_bambora_online_classic() {
                         add_action( 'woocommerce_order_status_completed', array( $this, 'bambora_online_classic_order_status_completed' ) );
                     }
                 }
-
-                add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
             }
+
             if ( class_exists( 'WC_Subscriptions_Order' ) ) {
                 // Subscriptions
                 add_action( 'woocommerce_scheduled_subscription_payment_' . $this->id, array( $this, 'scheduled_subscription_payment' ), 10, 2 );
                 add_action( 'woocommerce_subscription_cancelled_' . $this->id, array( $this, 'subscription_cancellation' ) );
+
+                if( !is_admin() && $this->override_subscription_need_payment === 'yes') {
+                    // Maybe order don't need payment because lock.
+                    add_filter( 'woocommerce_order_needs_payment', array( $this, 'maybe_override_needs_payment' ), 10, 2 );
+                }
             }
             // Register styles!
             add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_wc_bambora_online_classic_admin_styles_and_scripts' ) );
@@ -291,6 +298,12 @@ function init_bambora_online_classic() {
                     'description' => 'Please select how you want the rounding of the amount sendt to the payment system',
                     'options' => array( Bambora_Online_Classic_Helper::ROUND_DEFAULT => 'Default', Bambora_Online_Classic_Helper::ROUND_UP => 'Always up', Bambora_Online_Classic_Helper::ROUND_DOWN => 'Always down' ),
                     'default' => 'normal'
+                ),
+                'overridesubscriptionneedpayment' => array(
+                    'title' => 'Subscription payment override',
+                    'type' => 'checkbox',
+                    'description' => 'When this is enabled it is possible to use coupons for x free payments on a subscription',
+                    'default' => 'yes'
                 )
 
                 );
@@ -312,6 +325,22 @@ function init_bambora_online_classic() {
             $html .= '</table>';
 
             echo ent2ncr( $html );
+        }
+
+        /**
+         * When using a coupon for x free payments after the initial trial on a subscription then this will set the payment requirement to true
+         *
+         * @param bool     $needs_payment 
+         * @param WC_Order $order
+         * @return bool
+         */
+        public function maybe_override_needs_payment( $needs_payment, $order ) {
+
+            if (!$needs_payment && $this->id === $order->get_payment_method() &&  Bambora_Online_Classic_Helper::get_order_contains_subscription( $order, array( 'parent' ) ) ) {
+                $needs_payment = true;
+            }
+
+            return $needs_payment;
         }
 
         /**
@@ -888,6 +917,7 @@ function init_bambora_online_classic() {
                     Bambora_Online_Classic_Helper::add_admin_notices(Bambora_Online_Classic_Helper::SUCCESS, $message, true);
                     $url = admin_url( 'post.php?post=' . $post->ID . '&action=edit' );
                     wp_safe_redirect( $url );
+                    exit;
                 }
             }
         }

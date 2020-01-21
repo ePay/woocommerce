@@ -77,6 +77,20 @@ class Bambora_Online_Classic_Helper
     }
 
     /**
+     * Check if an order contains a subscription of type
+     *
+     * @param WC_Order $order
+     * @param array $types
+     * @return bool
+     */
+    public static function get_order_contains_subscription( $order, $types ) {
+        if( function_exists( 'wcs_order_contains_subscription' ) ) {
+            return wcs_order_contains_subscription( $order, $types );
+        }
+        return false;
+    }
+
+    /**
      * Check if order contains switching products
      *
      * @param WC_Order|int $order The WC_Order object or ID of a WC_Order order.
