@@ -2,10 +2,12 @@
 Contributors: bambora
 Tags: woocommerce, woo commerce, payment, payment gateway, gateway, subscription, subscriptions, bambora, epay, integration, woocommerce bambora, woocommerce epay, woocommerce bambora online classic, psp
 Requires at least: 4.0.0
-Tested up to: 5.3.0
-Stable tag: 5.1.0
+Tested up to: 5.3.2
+Stable tag: 5.1.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
+WC requires at least: 2.6
+WC tested up to: 3.8.1
 
 Integrates Bambora Online ePay payment gateway into your WooCommerce installation.
 
@@ -21,7 +23,7 @@ With Bambora Online ePay for WooCommerce, you are able to integrate the Bambora 
 * Delete your payments directly from your WooCommerce order page.
 * Sign up, process, cancel, reactivate and change subscriptions
 * Supports WooCommerce 2.6 and up.
-* Supports WooCommerce Subscription 2.x
+* Supports WooCommerce Subscription 2.x and 3.x
 * Bulk Capture
 
 == Installation ==
@@ -48,6 +50,9 @@ With Bambora Online ePay for WooCommerce, you are able to integrate the Bambora 
 <a href="https://woocommerce.wpguiden.dk/en/configuration">Click here for more information about **Settings**</a>
 
 == Changelog ==
+
+= 5.1.1 =
+* Add fix for subscription x free renewals not showing the payment window
 
 = 5.1.0 =
 * Adds Capture on order status changed to Completed
