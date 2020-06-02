@@ -330,7 +330,7 @@ function init_bambora_online_classic() {
         /**
          * When using a coupon for x free payments after the initial trial on a subscription then this will set the payment requirement to true
          *
-         * @param bool     $needs_payment 
+         * @param bool     $needs_payment
          * @param WC_Order $order
          * @return bool
          */
@@ -675,6 +675,8 @@ function init_bambora_online_classic() {
                 }
                 $epay_args['hash'] = md5( $hash . $this->md5key );
             }
+
+            $epay_args = apply_filters( 'bambora_online_classic_epay_args', $epay_args, $order_id );
 
             $epay_args_json = wp_json_encode( $epay_args );
             $payment_html = Bambora_Online_Classic_Helper::create_bambora_online_classic_payment_html( $epay_args_json );
