@@ -102,8 +102,8 @@ function init_bambora_online_classic() {
                 $this->supports = array_merge( $this->supports, array( 'refunds' ) );
             }
             
-            // Allow store managers to manually set Bambora online classic as the payment method on a subscription
-			add_filter( 'woocommerce_subscription_payment_meta', array( $this, 'add_subscription_payment_meta' ), 10, 2 );
+	    // Allow store managers to manually set Bambora online classic as the payment method on a subscription
+	    add_filter( 'woocommerce_subscription_payment_meta', array( $this, 'add_subscription_payment_meta' ), 10, 2 );
         }
 
         /**
