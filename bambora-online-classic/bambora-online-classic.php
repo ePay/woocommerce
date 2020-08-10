@@ -3,7 +3,7 @@
  * Plugin Name: Bambora Online ePay
  * Plugin URI: https://www.epay.dk
  * Description: Bambora Online ePay payment gateway for WooCommerce
- * Version: 5.1.2
+ * Version: 5.1.3
  * Author: Bambora Online
  * Author URI: https://www.epay.dk/epay-payment-solutions
  * Text Domain: bambora-online-classic
@@ -13,7 +13,7 @@
  */
 
 define( 'BOCLASSIC_PATH', dirname( __FILE__ ) );
-define( 'BOCLASSIC_VERSION', '5.1.2' );
+define( 'BOCLASSIC_VERSION', '5.1.3' );
 
 add_action( 'plugins_loaded', 'init_bambora_online_classic', 0 );
 
@@ -330,7 +330,7 @@ function init_bambora_online_classic() {
         /**
          * When using a coupon for x free payments after the initial trial on a subscription then this will set the payment requirement to true
          *
-         * @param bool     $needs_payment 
+         * @param bool     $needs_payment
          * @param WC_Order $order
          * @return bool
          */
@@ -902,7 +902,7 @@ function init_bambora_online_classic() {
          * Handle Bambora Online Classic Actions
          */
         public function bambora_online_classic_actions() {
-            if ( isset( $_GET['boclassicaction'] ) ) {
+            if ( isset( $_GET['boclassicaction'] ) && isset( $_GET['boclassicnonce'] ) && wp_verify_nonce( $_GET['boclassicnonce'], 'boclassic_process_payment_action' ) ) {
                 $params = $_GET;
                 $result = $this->process_bambora_online_classic_action( $params );
                 $action = $params['boclassicaction'];
@@ -917,7 +917,6 @@ function init_bambora_online_classic() {
                     Bambora_Online_Classic_Helper::add_admin_notices(Bambora_Online_Classic_Helper::SUCCESS, $message, true);
                     $url = admin_url( 'post.php?post=' . $post->ID . '&action=edit' );
                     wp_safe_redirect( $url );
-                    exit;
                 }
             }
         }
@@ -1199,6 +1198,7 @@ function init_bambora_online_classic() {
                 if ( $transaction_status === 'PAYMENT_NEW' || ( $transaction_status === 'PAYMENT_CAPTURED' && $total_credited === 0 ) ) {
                     $html .= '<div class="boclassic-action-container">';
                     $html .= '<input type="hidden" id="boclassic-currency" name="boclassic-currency" value="' . $currency . '">';
+                    wp_nonce_field( 'boclassic_process_payment_action', 'boclassicnonce' );
                     if ( $transaction_status === 'PAYMENT_NEW' ) {
                         $html .= '<input type="hidden" id="boclassic-capture-message" name="boclassic-capture-message" value="' . __( 'Are you sure you want to capture the payment?', 'bambora-online-classic' ) . '" />';
                         $html .= '<div class="boclassic-action">';

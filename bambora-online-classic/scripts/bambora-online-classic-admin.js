@@ -59,8 +59,9 @@ jQuery( document ).ready(function () {
 		if (confirmResult === false) {
 			return false;
 		}
-		var currency = jQuery( "#boclassic-currency" ).val();
-		var params = "&boclassicaction=" + action + "&amount=" + amount + "&currency=" + currency;
+		var currency = jQuery("#boclassic-currency").val();
+		var nonce = jQuery("#boclassicnonce").val();
+		var params = "&boclassicaction=" + action + "&boclassicnonce=" + nonce + "&amount=" + amount + "&currency=" + currency;
 		var url = window.location.href + params;
 
 		window.location.href = url;
