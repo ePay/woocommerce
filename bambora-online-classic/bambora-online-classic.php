@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: Bambora Online ePay
- * Plugin URI: https://www.epay.dk
+ * Plugin URI: https://www.bambora.com
  * Description: Bambora Online ePay payment gateway for WooCommerce
- * Version: 5.1.3
+ * Version: 5.1.4
  * Author: Bambora Online
- * Author URI: https://www.epay.dk/epay-payment-solutions
+ * Author URI: https://www.bambora.com
  * Text Domain: bambora-online-classic
  *
  * @author Bambora
@@ -13,7 +13,7 @@
  */
 
 define( 'BOCLASSIC_PATH', dirname( __FILE__ ) );
-define( 'BOCLASSIC_VERSION', '5.1.3' );
+define( 'BOCLASSIC_VERSION', '5.1.4' );
 
 add_action( 'plugins_loaded', 'init_bambora_online_classic', 0 );
 
