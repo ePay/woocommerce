@@ -376,8 +376,7 @@ function init_bambora_online_classic() {
             $paymentLogoes = '<div id="boclassic_card_logos">';
             $merchant_number = $this->merchant;
             if ( $merchant_number ) {
-                $paymentLogoes .= '<script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber=' . $merchant_number . '&direction=2&padding=2&rows=2&showdivs=0&logo=0&divid=boclassic_card_logos"></script>';
-            }
+            	$paymentLogoes .= '<script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber=' . $merchant_number . '&direction=2&padding=2&rows=1&showdivs=0&logo=0&cardwidth=44&divid=boclassic_card_logos"></script>';            }
             $paymentLogoes .= '</div>';
             $paymentFieldDescription .= $paymentLogoes;
             echo $paymentFieldDescription;
@@ -612,7 +611,7 @@ function init_bambora_online_classic() {
                     $webservice = new Bambora_Online_Classic_Soap( $this->remotepassword, true );
                     $delete_subscription_response = $webservice->delete_subscription( $this->merchant, $bambora_subscription_id );
                     if ( $delete_subscription_response->deletesubscriptionResult === true ) {
-                        $subscription->add_order_note( sprintf( __( 'Subscription successfully Canceled. - Bambora Online ePay Subscription Id: %s', 'bambora-online-classic' ), $bambora_subscription_id ) );
+                        $subscription->add_order_note( sprintf( __( 'Subscription successfully Cancelled. - Bambora Online ePay Subscription Id: %s', 'bambora-online-classic' ), $bambora_subscription_id ) );
                     } else {
                         $order_note = sprintf( __( 'Bambora Online ePay Subscription Id: %s', 'bambora-online-classic' ), $bambora_subscription_id );
                         if ( $delete_subscription_response->epayresponse != '-1' ) {
