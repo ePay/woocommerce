@@ -1292,6 +1292,13 @@ function init_bambora_online_classic() {
         public function plugin_url( $path ) {
             return plugins_url( $path, __FILE__ );
         }
+
+	    public function get_icon() {
+
+		    $icon_html = '<img src="'. $this->icon.'" alt="'.$this->method_title.'" width="50"  />';
+
+		    return apply_filters( 'woocommerce_gateway_icon', $icon_html );
+	    }
     }
 
     add_filter( 'woocommerce_payment_gateways', 'add_bambora_online_classic_woocommerce' );
