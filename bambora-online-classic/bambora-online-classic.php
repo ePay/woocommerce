@@ -1296,7 +1296,7 @@ function init_bambora_online_classic() {
 
 		    $icon_html = '<img src="'. $this->icon.'" alt="'.$this->method_title.'" width="50"  />';
 
-		    return apply_filters( 'woocommerce_gateway_icon', $icon_html );
+		    return apply_filters( 'woocommerce_gateway_icon', $icon_html, $this->id  );
 	    }
     }
 
