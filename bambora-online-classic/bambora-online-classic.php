@@ -1272,8 +1272,8 @@ function init_bambora_online_classic() {
 
                 $history_array = $transaction->history->TransactionHistoryInfo;
 
-                if ( ! array_key_exists( 0, $transaction->history->TransactionHistoryInfo ) ) {
-                    $history_array = array( $transaction->history->TransactionHistoryInfo );
+                if ( isset($history_array) && !is_array($history_array) ) {
+                    $history_array = array( $history_array);
                 }
 
                 // Sort the history array based on when the history event is created
