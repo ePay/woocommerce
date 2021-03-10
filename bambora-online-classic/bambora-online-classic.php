@@ -83,6 +83,7 @@ function init_bambora_online_classic() {
                 'subscription_amount_changes',
                 'subscription_date_changes',
                 'subscription_payment_method_change_customer',
+	            'subscription_payment_method_change_admin',
                 'multiple_subscriptions'
                 );
 
@@ -101,6 +102,8 @@ function init_bambora_online_classic() {
             if ( $this->remoteinterface === 'yes' ) {
                 $this->supports = array_merge( $this->supports, array( 'refunds' ) );
             }
+	        // Allow store managers to manually set Bambora online classic as the payment method on a subscription
+	        add_filter( 'woocommerce_subscription_payment_meta', array( $this, 'add_subscription_payment_meta' ), 10, 2 );
         }
 
         /**
@@ -1104,6 +1107,23 @@ function init_bambora_online_classic() {
                 return new WP_Error( 'bambora_online_classic_error', $message );
             }
         }
+	    /**
+	     * Add subscripts payment meta, to allow for subscripts import to map tokens, and for admins to manually set a subscription token
+	     *
+	     * @Link https://github.com/woocommerce/woocommerce-subscriptions-importer-exporter#importing-payment-gateway-meta-data
+	     */
+	    public function add_subscription_payment_meta( $payment_meta, $subscription ) {
+		    $payment_meta[ $this->id ] = array(
+			    'post_meta' => array(
+				    Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID => array(
+					    'value' => Bambora_Online_Classic_Helper::get_bambora_online_classic_subscription_id( $subscription),
+					    'label' => __('Bambora subscription token', 'bambora-online-classic'),
+					    'disabled' => false,
+				    ),
+			    ),
+		    );
+		    return $payment_meta;
+	    }
 
         /**
          * Add Bambora Online Classic Meta boxes
