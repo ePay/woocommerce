@@ -390,7 +390,7 @@ function init_bambora_online_classic() {
             $paymentLogoes = '<div id="boclassic_card_logos">';
             $merchant_number = $this->merchant;
             if ( $merchant_number ) {
-            	$paymentLogoes .= '<script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber=' . $merchant_number . '&direction=2&padding=2&rows=1&showdivs=0&logo=0&cardwidth=44&divid=boclassic_card_logos"></script>';            }
+            	$paymentLogoes .= '<script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber=' . $merchant_number . '&direction=2&padding=2&rows=1&showdivs=0&logo=0&cardwidth=40&divid=boclassic_card_logos"></script>';            }
             $paymentLogoes .= '</div>';
             $paymentFieldDescription .= $paymentLogoes;
             echo $paymentFieldDescription;
