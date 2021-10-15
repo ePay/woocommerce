@@ -26,28 +26,23 @@ class Bambora_Online_Classic_Soap {
 	 */
 	public function __construct( $pwd = '', $subscription = false ) {
 		$this->pwd = $pwd;
-
-		if ( $subscription ) {
-			$service_url = 'https://ssl.ditonlinebetalingssystem.dk/remote/subscription.asmx?WSDL';
-			$this->isSubscription = $subscription;
-		} else {
-			$service_url = 'https://ssl.ditonlinebetalingssystem.dk/remote/payment.asmx?WSDL';
-		}
-
+		$this->isSubscription = $subscription;
 		$this->proxy = new WP_HTTP_Proxy();
+		$options = array();
+		$service_url = $this->isSubscription ? 
+		'https://ssl.ditonlinebetalingssystem.dk/remote/subscription.asmx?WSDL' : 
+		'https://ssl.ditonlinebetalingssystem.dk/remote/payment.asmx?WSDL';
+		
+		if ( $this->proxy->is_enabled() && $this->proxy->send_through_proxy( $service_url ) ) {
+			$options['proxy_host'] = $this->proxy->host();
+			$options['proxy_port'] = $this->proxy->port();
 
-		if ($this->proxy->is_enabled() && $this->proxy->send_through_proxy( $service_url )){
-			$options = array(
-				'proxy_host'     => $this->proxy->host(),
-				'proxy_port'     => $this->proxy->port(),
-			);
-			if ($this->proxy->use_authentication()) {
+			if ( $this->proxy->use_authentication() ) {
 				$options['proxy_login'] = $this->proxy->username();
 				$options['proxy_password'] = $this->proxy->password();
 			}
-		} else{
-			$options = array();
 		}
+
 		$this->client = new SoapClient(
 			$service_url,
 			$options
