@@ -16,6 +16,7 @@ class Bambora_Online_Classic_Soap {
 	private $pwd = '';
 	private $client = null;
 	private $isSubscription = false;
+	private $proxy;
 
 	/**
 	 * Constructor
@@ -27,11 +28,30 @@ class Bambora_Online_Classic_Soap {
 		$this->pwd = $pwd;
 
 		if ( $subscription ) {
-			$this->client  = new SoapClient( 'https://ssl.ditonlinebetalingssystem.dk/remote/subscription.asmx?WSDL' );
+			$service_url = 'https://ssl.ditonlinebetalingssystem.dk/remote/subscription.asmx?WSDL';
 			$this->isSubscription = $subscription;
 		} else {
-			$this->client  = new SoapClient( 'https://ssl.ditonlinebetalingssystem.dk/remote/payment.asmx?WSDL' );
+			$service_url = 'https://ssl.ditonlinebetalingssystem.dk/remote/payment.asmx?WSDL';
 		}
+
+		$this->proxy = new WP_HTTP_Proxy();
+
+		if ($this->proxy->is_enabled() && $this->proxy->send_through_proxy( $service_url )){
+			$options = array(
+				'proxy_host'     => $this->proxy->host(),
+				'proxy_port'     => $this->proxy->port(),
+			);
+			if ($this->proxy->use_authentication()) {
+				$options['proxy_login'] = $this->proxy->username();
+				$options['proxy_password'] = $this->proxy->password();
+			}
+		} else{
+			$options = array();
+		}
+		$this->client = new SoapClient(
+			$service_url,
+			$options
+		);
 	}
 
 	/**
