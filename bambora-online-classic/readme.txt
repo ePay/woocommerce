@@ -9,10 +9,12 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 WC requires at least: 2.6
 WC tested up to: 5.8
 
-Integrates Bambora Online ePay payment gateway into your WooCommerce installation.
+Integrates Bambora ePay payment gateway into your WooCommerce installation.
 
 == Description ==
-With Bambora Online ePay for WooCommerce, you are able to integrate the Bambora Online ePay payment window into your WooCommerce installation and start receiving secure online payments.
+Bambora will now be known as Worldline. As your payment partner, we’re now becoming stronger and better. However, all the things that you love about Bambora will remain the same – the contract, the people, and the solutions.
+
+With Bambora ePay for WooCommerce, you are able to integrate the Bambora Online ePay payment window into your WooCommerce installation and start receiving secure online payments.
 
 = Features =
 * Receive payments securely through the Bambora Online ePay payment window
@@ -95,7 +97,7 @@ Update of logo to Wordline.
 * Code refactoring to comply with WordPress 5.x 
 
 = 5.0.1 =
-* Fix for Payment logoes not always displayed as payment description.
+* Fix for Payment logos not always displayed as payment description.
 * Fix for ordernumber cleaning. It now only supports letters from a-z and all digits
 
 = 5.0.0 =
@@ -150,7 +152,7 @@ Update of logo to Wordline.
 
 = 3.1.2 =
 * Improved quality for Bambora logo
-* Improved quality for Bambora payment type logoes
+* Improved quality for Bambora payment type logos
 * Adds rounding option in module configuration
 * Adds more language codes
 * Refactoring of module css files
@@ -178,7 +180,7 @@ Update of logo to Wordline.
 * Fix for wrong parameter pbsresponse
 
 = 2.6.6 =
-* Adds readme.txt for markedplace integration
+* Adds readme.txt for marketplace integration
 * Adds support for nb_NO
 * Fix for subscription_cancellation throwing exception
 
@@ -212,11 +214,11 @@ Update of logo to Wordline.
 * Fix for wrong rounding on soap request
 
 = 2.6.0 = 
-* Fix for Undefined index: enableinvoice and preg_replace(/e) deprication
+* Fix for Undefined index: enableinvoice and preg_replace(/e) deprecation
 * Fix for no translation of texts
 * Fix for order update on callback with custom order status
 * Fix for German language
-* Add language Norwegian (Bookm�l)
+* Add language Norwegian (Bookm&aoml;l)
 * Add extended cms info on payment request
 * Add error description on failed subscriptions
 * Code cleanup
