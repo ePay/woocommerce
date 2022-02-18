@@ -334,7 +334,20 @@ function init_bambora_online_classic() {
 
             $html = "<h3>Bambora Online ePay v{$version}</h3>";
             $html .= Bambora_Online_Classic_Helper::create_admin_debug_section();
-            $html .= '<h3 class="wc-settings-sub-title">Module configuration</h3>';
+            $html .= '<h3 class="wc-settings-sub-title">Module Configuration</h3>';
+
+	        if ( class_exists( 'sitepress' ) ) {
+			        $html .= '<div class="form-table">
+					<h2>You have WPML activated.</h2>
+					If you need to configure another merchant number for another language translate them under
+					<a href="admin.php?page=wpml-string-translation/menu/string-translation.php&context=admin_texts_woocommerce_epay_dk_settings" class="current" aria-currents="page">String Translation</a>
+					</br>
+					Subscriptions are currently only supported for the default merchant number.
+					</br>	
+</div>';
+	        }
+
+
             $html .= '<table class="form-table">';
 
             // Generate the HTML For the settings form.!
@@ -390,12 +403,17 @@ function init_bambora_online_classic() {
         public function payment_fields() {
             $text_replace = wptexturize( $this->description );
             $paymentFieldDescription = wpautop( $text_replace );
-            $paymentLogoes = '<div id="boclassic_card_logos">';
-            $merchant_number = $this->merchant;
+            $paymentLogos = '<div id="boclassic_card_logos">';
+
+	        if ( class_exists( 'sitepress' ) ) {
+		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant" );
+	        } else {
+		        $merchant_number = $this->merchant;
+	        }
             if ( $merchant_number ) {
-            	$paymentLogoes .= '<script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber=' . $merchant_number . '&direction=2&padding=2&rows=1&showdivs=0&logo=0&cardwidth=40&divid=boclassic_card_logos"></script>';            }
-            $paymentLogoes .= '</div>';
-            $paymentFieldDescription .= $paymentLogoes;
+            	$paymentLogos .= '<script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber=' . $merchant_number . '&direction=2&padding=2&rows=1&showdivs=0&logo=0&cardwidth=40&divid=boclassic_card_logos"></script>';            }
+            $paymentLogos .= '</div>';
+            $paymentFieldDescription .= $paymentLogos;
             echo $paymentFieldDescription;
         }
 
@@ -666,12 +684,19 @@ function init_bambora_online_classic() {
             $order_total = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_total() : $order->order_total;
             $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $order_currency );
 
+	        if ( class_exists( 'sitepress' ) ) {
+		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", Bambora_Online_Classic_Helper::getWPMLOrderLanguage( $order ) );
+	        } else {
+		        $merchant_number = $this->merchant;
+	        }
+
+
             $epay_args = array(
                 'encoding' => 'UTF-8',
                 'cms' => Bambora_Online_Classic_Helper::get_module_header_info(),
                 'windowstate' => "3",
                 'mobile' => Bambora_Online_Classic_Helper::yes_no_to_int( $this->enablemobilepaymentwindow ),
-                'merchantnumber' => $this->merchant,
+                'merchantnumber' => $merchant_number,
                 'windowid' => $this->windowid,
                 'currency' => $order_currency,
                 'amount' => Bambora_Online_Classic_Helper::convert_price_to_minorunits( $order_total, $minorunits, $this->roundingmode ),
@@ -695,12 +720,18 @@ function init_bambora_online_classic() {
                 $epay_args['subscription'] = 1;
             }
 
-            if ( strlen( $this->md5key ) > 0 ) {
+	        $md5_key = $this->md5key;
+
+	        if ( class_exists( 'sitepress' ) ) {
+		        $md5_key = Bambora_Online_Classic_Helper::getWPMLOptionValue( 'md5key', Bambora_Online_Classic_Helper::getWPMLOrderLanguage( $order ) );
+	        }
+
+            if ( strlen(  $md5_key ) > 0 ) {
                 $hash = '';
                 foreach ( $epay_args as $value ) {
                     $hash .= $value;
                 }
-                $epay_args['hash'] = md5( $hash . $this->md5key );
+                $epay_args['hash'] = md5( $hash . $md5_key );
             }
 	        $epay_args = apply_filters( 'bambora_online_classic_epay_args', $epay_args, $order_id );
             $epay_args_json = wp_json_encode( $epay_args );
@@ -1028,17 +1059,27 @@ function init_bambora_online_classic() {
             $amount_in_minorunits = Bambora_Online_Classic_Helper::convert_price_to_minorunits( $amount, $minorunits, $this->roundingmode );
             $transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
 
-            $webservice = new Bambora_Online_Classic_Soap( $this->remotepassword );
-            $capture_response = $webservice->capture( $this->merchant, $transaction_id, $amount_in_minorunits );
+	        if ( class_exists( 'sitepress' ) ) {
+		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant" );
+		        $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword" );
+	        } else {
+		        $merchant_number = $this->merchant;
+		        $remote_password = $this->remotepassword;
+	        }
+
+
+
+            $webservice = new Bambora_Online_Classic_Soap( $remote_password );
+            $capture_response = $webservice->capture( $merchant_number, $transaction_id, $amount_in_minorunits );
             if ( $capture_response->captureResult === true ) {
                 do_action( 'bambora_online_classic_after_capture', $order_id );
                 return true;
             } else {
                 $message = sprintf( __( 'Capture action failed for order %s', 'bambora-online-classic' ), $order_id );
                 if ( $capture_response->epayresponse != '-1' ) {
-                    $message .= ' - ' . $webservice->get_epay_error( $this->merchant, $capture_response->epayresponse );
+                    $message .= ' - ' . $webservice->get_epay_error($merchant_number, $capture_response->epayresponse );
                 } elseif ( $capture_response->pbsResponse != '-1' ) {
-                    $message .= ' - ' . $webservice->get_pbs_error( $this->merchant, $capture_response->pbsResponse );
+                    $message .= ' - ' . $webservice->get_pbs_error($merchant_number, $capture_response->pbsResponse );
                 }
                 $this->_boclassic_log->add( $message );
                 return new WP_Error( 'bambora_online_classic_error', $message );
@@ -1066,17 +1107,26 @@ function init_bambora_online_classic() {
             $amount_in_minorunits = Bambora_Online_Classic_Helper::convert_price_to_minorunits( $amount, $minorunits, $this->roundingmode );
             $transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
 
-            $webservice = new Bambora_Online_Classic_Soap( $this->remotepassword );
-            $refund_response = $webservice->refund( $this->merchant, $transaction_id, $amount_in_minorunits );
+	        if ( class_exists( 'sitepress' ) ) {
+		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant" );
+		        $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword" );
+	        } else {
+		        $merchant_number = $this->merchant;
+		        $remote_password = $this->remotepassword;
+	        }
+
+
+            $webservice = new Bambora_Online_Classic_Soap( $remote_password );
+            $refund_response = $webservice->refund($merchant_number, $transaction_id, $amount_in_minorunits );
             if ( $refund_response->creditResult === true ) {
                 do_action( 'bambora_online_classic_after_refund', $order_id );
                 return true;
             } else {
                 $message = sprintf( __( 'Refund action failed for order %s', 'bambora-online-classic' ), $order_id );
                 if ( $refund_response->epayresponse != '-1' ) {
-                    $message .= ' - ' . $webservice->get_epay_error( $this->merchant, $refund_response->epayresponse );
+                    $message .= ' - ' . $webservice->get_epay_error( $merchant_number, $refund_response->epayresponse );
                 } elseif ( $refund_response->pbsResponse != '-1' ) {
-                    $message .= ' - ' . $webservice->get_pbs_error( $this->merchant, $refund_response->pbsResponse );
+                    $message .= ' - ' . $webservice->get_pbs_error( $merchant_number, $refund_response->pbsResponse );
                 }
                 $this->_boclassic_log->add( $message );
                 return new WP_Error( 'bambora_online_classic_error', $message );
@@ -1093,15 +1143,23 @@ function init_bambora_online_classic() {
             $order = wc_get_order( $order_id );
             $transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
 
-            $webservice = new Bambora_Online_Classic_Soap( $this->remotepassword );
-            $delete_response = $webservice->delete( $this->merchant, $transaction_id );
+	        if ( class_exists( 'sitepress' ) ) {
+		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant" );
+		        $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword" );
+	        } else {
+		        $merchant_number = $this->merchant;
+		        $remote_password = $this->remotepassword;
+	        }
+
+	        $webservice      = new Bambora_Online_Classic_Soap( $remote_password );
+	        $delete_response = $webservice->delete( $merchant_number, $transaction_id );
             if ( $delete_response->deleteResult === true ) {
                 do_action( 'bambora_online_classic_after_delete', $order_id );
                 return true;
             } else {
                 $message = sprintf( __( 'Delete action failed for order %s', 'bambora-online-classic' ), $order_id );
                 if ( $delete_response->epayresponse != '-1' ) {
-                    $message .= ' - ' . $webservice->get_epay_error( $this->merchant, $delete_response->epayresponse );
+                    $message .= ' - ' . $webservice->get_epay_error( $merchant_number, $delete_response->epayresponse );
                 }
                 $this->_boclassic_log->add( $message );
                 return new WP_Error( 'bambora_online_classic_error', $message );
@@ -1184,12 +1242,20 @@ function init_bambora_online_classic() {
         protected function bambora_online_classic_meta_box_payment_html( $order, $transaction_id ) {
             try {
                 $html = '';
-                $webservice = new Bambora_Online_Classic_Soap( $this->remotepassword );
-                $get_transaction_response = $webservice->get_transaction( $this->merchant, $transaction_id );
+	            if ( class_exists( 'sitepress' ) ) {
+		            $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant" );
+		            $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword" );
+	            } else {
+		            $merchant_number = $this->merchant;
+		            $remote_password = $this->remotepassword;
+	            }
+
+                $webservice = new Bambora_Online_Classic_Soap( $remote_password);
+                $get_transaction_response = $webservice->get_transaction( $merchant_number, $transaction_id );
                 if ( $get_transaction_response->gettransactionResult === false ) {
                     $html = __( 'Get Transaction action failed', 'bambora-online-classic' );
                     if ( $get_transaction_response->epayresponse != '-1' ) {
-                        $html .= ' - ' . $webservice->get_epay_error( $this->merchant, $get_transaction_response->epayresponse );
+                        $html .= ' - ' . $webservice->get_epay_error( $merchant_number, $get_transaction_response->epayresponse );
                     }
                     return $html;
                 }

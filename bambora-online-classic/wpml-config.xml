@@ -1,0 +1,9 @@
+<wpml-config>
+    <admin-texts>
+        <key name="woocommerce_epay_dk_settings">
+            <key name="merchant"/>
+            <key name="md5key"/>
+            <key name="remotepassword"/>
+        </key>
+    </admin-texts>
+</wpml-config>

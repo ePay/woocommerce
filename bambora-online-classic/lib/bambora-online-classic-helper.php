@@ -291,7 +291,10 @@ class Bambora_Online_Classic_Helper
             $message = 'No GET(txnid) was supplied to the system!';
             return false;
         }
-
+	    if ( class_exists( 'sitepress' ) ) {
+		    $order_language = Bambora_Online_Classic_Helper::getWPMLOrderLanguage( $order );
+		    $md5_key        = Bambora_Online_Classic_Helper::getWPMLOptionValue( 'md5key', $order_language );
+	    }
         // Validate MD5!
         $var = '';
         if ( strlen( $md5_key ) > 0 ) {
@@ -309,6 +312,43 @@ class Bambora_Online_Classic_Helper
 
         return true;
     }
+
+	/**
+	 * Get the language the order was made in
+	 *
+	 * @param WC_Order $order
+	 *
+	 * @return string
+	 */
+	public static function getWPMLOrderLanguage( WC_Order $order ) {
+		$order_language = get_post_meta( $order->get_id(), 'wpml_language', true );
+
+		return $order_language;
+	}
+
+	/**
+	 * Get the option value by language
+	 *
+	 * @param WC_Order $order
+	 *
+	 * @return string
+	 */
+
+	public static function getWPMLOptionValue( $key, $language = null ) {
+		if ( is_null( $language ) ) {
+			$language = apply_filters( 'wpml_current_language', null );
+		}
+		$option_value = null;
+		$options      = get_option( 'woocommerce_epay_dk_settings' );
+		if ( isset( $options[ $key ] ) ) {
+			$key_value = $options[ $key ];
+			if ( isset( $language ) && $language != "" ) {
+				$option_value = apply_filters( 'wpml_translate_single_string', $key_value, "admin_texts_woocommerce_epay_dk_settings", "[woocommerce_epay_dk_settings]" . $key, $language );
+			}
+		}
+
+		return $option_value;
+	}
 
     /**
      * Remove all special characters
