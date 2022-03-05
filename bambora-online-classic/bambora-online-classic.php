@@ -406,7 +406,7 @@ function init_bambora_online_classic() {
             $paymentLogos = '<div id="boclassic_card_logos">';
 
 	        if ( class_exists( 'sitepress' ) ) {
-		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant" );
+		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
 	        } else {
 		        $merchant_number = $this->merchant;
 	        }
@@ -685,11 +685,10 @@ function init_bambora_online_classic() {
             $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $order_currency );
 
 	        if ( class_exists( 'sitepress' ) ) {
-		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", Bambora_Online_Classic_Helper::getWPMLOrderLanguage( $order ) );
+		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
 	        } else {
 		        $merchant_number = $this->merchant;
 	        }
-
 
             $epay_args = array(
                 'encoding' => 'UTF-8',
@@ -720,10 +719,10 @@ function init_bambora_online_classic() {
                 $epay_args['subscription'] = 1;
             }
 
-	        $md5_key = $this->md5key;
-
 	        if ( class_exists( 'sitepress' ) ) {
-		        $md5_key = Bambora_Online_Classic_Helper::getWPMLOptionValue( 'md5key', Bambora_Online_Classic_Helper::getWPMLOrderLanguage( $order ) );
+		        $md5_key = Bambora_Online_Classic_Helper::getWPMLOptionValue( 'md5key', Bambora_Online_Classic_Helper::getWPMLOrderLanguage( $order ), $this->md5key );
+	        } else {
+		        $md5_key = $this->md5key;
 	        }
 
             if ( strlen(  $md5_key ) > 0 ) {
@@ -1060,8 +1059,8 @@ function init_bambora_online_classic() {
             $transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
 
 	        if ( class_exists( 'sitepress' ) ) {
-		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant" );
-		        $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword" );
+		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
+		        $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword", $this->remotepassword );
 	        } else {
 		        $merchant_number = $this->merchant;
 		        $remote_password = $this->remotepassword;
@@ -1108,8 +1107,8 @@ function init_bambora_online_classic() {
             $transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
 
 	        if ( class_exists( 'sitepress' ) ) {
-		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant" );
-		        $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword" );
+		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
+		        $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword", $this->remotepassword );
 	        } else {
 		        $merchant_number = $this->merchant;
 		        $remote_password = $this->remotepassword;
@@ -1144,8 +1143,8 @@ function init_bambora_online_classic() {
             $transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
 
 	        if ( class_exists( 'sitepress' ) ) {
-		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant" );
-		        $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword" );
+		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
+		        $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword", $this->remotepassword );
 	        } else {
 		        $merchant_number = $this->merchant;
 		        $remote_password = $this->remotepassword;
@@ -1243,8 +1242,8 @@ function init_bambora_online_classic() {
             try {
                 $html = '';
 	            if ( class_exists( 'sitepress' ) ) {
-		            $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant" );
-		            $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword" );
+		            $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
+		            $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword", $this->remotepassword );
 	            } else {
 		            $merchant_number = $this->merchant;
 		            $remote_password = $this->remotepassword;
