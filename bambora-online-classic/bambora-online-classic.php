@@ -14,7 +14,7 @@
 
 
 define( 'BOCLASSIC_PATH', dirname( __FILE__ ) );
-define( 'BOCLASSIC_VERSION', '5.3.1' );
+define( 'BOCLASSIC_VERSION', '5.3.2' );
 
 add_action( 'plugins_loaded', 'init_bambora_online_classic', 0 );
 
