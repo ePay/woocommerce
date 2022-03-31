@@ -292,7 +292,7 @@ class Bambora_Online_Classic_Helper
             return false;
         }
 	    if ( class_exists( 'sitepress' ) ) {
-		    $order_language = Bambora_Online_Classic_Helper::getWPMLOrderLanguage( $order->get_id() );
+		    $order_language = Bambora_Online_Classic_Helper::getWPMLOrderLanguage( $order );
 		    $md5_key        = Bambora_Online_Classic_Helper::getWPMLOptionValue( 'md5key', $order_language, $md5_key );
 	    }
         // Validate MD5!
