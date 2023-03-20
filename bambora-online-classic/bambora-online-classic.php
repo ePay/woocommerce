@@ -200,7 +200,7 @@ function init_bambora_online_classic() {
          */
         public function init_form_fields() {
 	        $roles = wp_roles()->roles;
-
+	        unset( $roles["administrator"] ); // Administrator will always have access so we do not include this role here.
 	        foreach ( $roles as $role => $details ) {
 		        $roles_options[ $role ] = translate_user_role( $details['name'] );
 	        }
@@ -320,7 +320,7 @@ function init_bambora_online_classic() {
 		            'description' => 'Please select user role for access to capture/refund/delete (role administrator will always have access). The role also of course need to have access to view orders. ',
 		            'options' => $roles_options,
 		            'label' => 'User role',
-		            'default' => 'administrator'
+		            'default' => 'shop_manager'
 	            )
 
                 );
@@ -383,7 +383,7 @@ function init_bambora_online_classic() {
             }
 
             $order = wc_get_order( $order_id );
-            $order_total = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_total() : $order->order_total;
+            $order_total = $order->get_total();
             $capture_result = $this->bambora_online_classic_capture_payment($order_id, $order_total, '');
 
             if ( is_wp_error( $capture_result ) ) {
@@ -426,7 +426,7 @@ function init_bambora_online_classic() {
          * */
         protected function create_invoice( $order, $minorunits ) {
             if ( $this->enableinvoice == 'yes' ) {
-                if ( Bambora_Online_Classic_Helper::is_woocommerce_3() ) {
+
                     $invoice['customer']['emailaddress'] = $order->get_billing_email();
                     $invoice['customer']['firstname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_first_name() );
                     $invoice['customer']['lastname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_last_name() );
@@ -441,22 +441,7 @@ function init_bambora_online_classic() {
                     $invoice['shippingaddress']['zip'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_postcode() );
                     $invoice['shippingaddress']['city'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_city() );
                     $invoice['shippingaddress']['country'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_country() );
-                } else {
-                    $invoice['customer']['emailaddress'] = $order->billing_email;
-                    $invoice['customer']['firstname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->billing_first_name );
-                    $invoice['customer']['lastname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->billing_last_name );
-                    $invoice['customer']['address'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->billing_address_1 );
-                    $invoice['customer']['zip'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->billing_postcode );
-                    $invoice['customer']['city'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->billing_city );
-                    $invoice['customer']['country'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->billing_country );
 
-                    $invoice['shippingaddress']['firstname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->shipping_first_name );
-                    $invoice['shippingaddress']['lastname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->shipping_last_name );
-                    $invoice['shippingaddress']['address'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->shipping_address_1 );
-                    $invoice['shippingaddress']['zip'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->shipping_postcode );
-                    $invoice['shippingaddress']['city'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->shipping_city );
-                    $invoice['shippingaddress']['country'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->shipping_country );
-                }
                 $invoice['lines'] = $this->create_invoice_order_lines( $order, $minorunits );
 
                 return wp_json_encode( $invoice, JSON_UNESCAPED_UNICODE );
@@ -492,7 +477,7 @@ function init_bambora_online_classic() {
             }
             $shipping_methods = $order->get_shipping_methods();
             if ( $shipping_methods && count( $shipping_methods ) !== 0 ) {
-                $shipping_total = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_shipping_total() : $order->get_total_shipping();
+                $shipping_total = $order->get_shipping_total();
                 $shipping_tax = (float) $order->get_shipping_tax();
                 $shipping_method = reset( $shipping_methods );
                 $invoice_order_lines[] = array(
@@ -566,7 +551,7 @@ function init_bambora_online_classic() {
         public function scheduled_subscription_payment( $amount_to_charge, $renewal_order ) {
             $subscription = Bambora_Online_Classic_Helper::get_subscriptions_for_renewal_order( $renewal_order );
             $result = $this->process_subscription_payment( $amount_to_charge, $renewal_order, $subscription );
-            $renewal_order_id = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $renewal_order->get_id() : $renewal_order->id;
+            $renewal_order_id = $renewal_order->get_id();
 
             // Remove the Bambora Online Classic subscription id copyid from the subscription
             delete_post_meta( $renewal_order_id, Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID );
@@ -592,10 +577,10 @@ function init_bambora_online_classic() {
                     return new WP_Error( 'bambora_online_classic_error', __( 'Bambora Online ePay Subscription id was not found', 'bambora-online-classic' ) );
                 }
 
-                $order_currency = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $renewal_order->get_currency() : $renewal_order->get_order_currency();
+                $order_currency =$renewal_order->get_currency();
                 $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $order_currency );
                 $amount = Bambora_Online_Classic_Helper::convert_price_to_minorunits( $amount, $minorunits, $this->roundingmode );
-                $renewal_order_id = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $renewal_order->get_id() : $renewal_order->id;
+                $renewal_order_id = $renewal_order->get_id();
 
                 $webservice = new Bambora_Online_Classic_Soap( $this->remotepassword, true );
                 $authorize_response = $webservice->authorize( $this->merchant, $bambora_subscription_id, $renewal_order_id, $amount, Bambora_Online_Classic_Helper::get_iso_code( $order_currency ), (bool) Bambora_Online_Classic_Helper::yes_no_to_int( $this->instantcapture ), $this->group, $this->authmail );
@@ -680,8 +665,8 @@ function init_bambora_online_classic() {
             $order = wc_get_order( $order_id );
             $is_request_to_change_payment_method = Bambora_Online_Classic_Helper::order_is_subscription( $order );
 
-            $order_currency = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_currency() : $order->get_order_currency();
-            $order_total = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_total() : $order->order_total;
+            $order_currency = $order->get_currency();
+            $order_total = $order->get_total();
             $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $order_currency );
 
 	        if ( class_exists( 'sitepress' ) ) {
@@ -883,7 +868,7 @@ function init_bambora_online_classic() {
          * @param array    $params
          */
         protected function add_surcharge_fee_to_order( $order, $params ) {
-            $order_currency = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_currency() : $order->get_order_currency;
+            $order_currency = $order->get_currency();
             $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $order_currency );
             $fee_amount_in_minorunits = $params['txnfee'];
             if ( $fee_amount_in_minorunits > 0 && $this->addfeetoorder === 'yes' ) {
@@ -896,9 +881,6 @@ function init_bambora_online_classic() {
                     'tax_data'      => array(),
                     'tax'           => 0,
                     );
-                if ( ! Bambora_Online_Classic_Helper::is_woocommerce_3() ) {
-                    $order->add_fee( $fee );
-                } else {
                     $fee_item = new WC_Order_Item_Fee();
                     $fee_item->set_props( array(
                         'name' => $fee->name,
@@ -910,9 +892,7 @@ function init_bambora_online_classic() {
                     );
                     $fee_item->save();
                     $order->add_item( $fee_item );
-                }
-
-                $total_incl_fee = ( Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_total() : $order->order_total ) + $fee_amount;
+                $total_incl_fee = $order->get_total() + $fee_amount;
                 $order->set_total( $total_incl_fee );
             }
         }
@@ -924,7 +904,7 @@ function init_bambora_online_classic() {
          * @return void
          */
         protected function add_or_update_payment_type_id_to_order( $order, $payment_type_id) {
-            $order_id = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_id() : $order->id;
+            $order_id = $order->get_id();
             $existing_payment_type_id = get_post_meta($order_id, Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_PAYMENT_TYPE_ID, true);
 
             if(!isset($existing_payment_type_id) || $existing_payment_type_id !== $payment_type_id) {
@@ -941,14 +921,14 @@ function init_bambora_online_classic() {
          */
         protected function save_subscription_meta( $order, $bambora_subscription_id, $is_subscription ) {
             $bambora_subscription_id = wc_clean( $bambora_subscription_id );
-            $order_id = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_id() : $order->id;
+            $order_id = $order->get_id();
             if ( $is_subscription ) {
                 update_post_meta( $order_id, Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID, $bambora_subscription_id );
             } else {
                 // Also store it on the subscriptions being purchased in the order
                 $subscriptions = Bambora_Online_Classic_Helper::get_subscriptions_for_order( $order_id );
                 foreach ( $subscriptions as $subscription ) {
-                    $wc_subscription_id = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $subscription->get_id() : $subscription->id;
+                    $wc_subscription_id = $subscription->get_id();
                     update_post_meta( $wc_subscription_id, Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID, $bambora_subscription_id );
                     $subscription->add_order_note( sprintf( __( 'Bambora Online ePay Subscription activated with subscription id: %s by order %s', 'bambora-online-classic' ), $bambora_subscription_id, $order_id ) );
                 }
@@ -1051,7 +1031,7 @@ function init_bambora_online_classic() {
 
             $order = wc_get_order( $order_id );
             if( empty( $currency ) ) {
-                $currency = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_currency() : $order->get_order_currency;
+                $currency = $order->get_currency();
             }
             $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $currency );
             $amount = str_replace( ',', '.', $amount );
@@ -1098,7 +1078,7 @@ function init_bambora_online_classic() {
             $order = wc_get_order( $order_id );
 
             if( empty( $currency ) ) {
-                $currency = Bambora_Online_Classic_Helper::is_woocommerce_3() ? $order->get_currency() : $order->get_order_currency;
+                $currency = $order->get_currency();
             }
 
             $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $currency );

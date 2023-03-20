@@ -148,12 +148,12 @@ class Bambora_Online_Classic_Helper
      * @param WC_Subscription $subscription
      */
     public static function get_bambora_online_classic_subscription_id( $subscription ) {
-        $subscription_id = self::is_woocommerce_3() ? $subscription->get_id() : $subscription->id;
+        $subscription_id = $subscription->get_id();
         $bambora_subscription_id = get_post_meta( $subscription_id, self::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID, true );
 
         //For Legacy
         if( empty( $bambora_subscription_id ) ) {
-            $parent_order_id = self::is_woocommerce_3() ? $subscription->get_parent_id() : $subscription->parent_id;
+            $parent_order_id = $subscription->get_parent_id();
             $bambora_subscription_id = get_post_meta( $parent_order_id, self::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID_LEGACY, true );
             if( !empty( $bambora_subscription_id ) ) {
                 //Transform Legacy to new standards
@@ -174,7 +174,7 @@ class Bambora_Online_Classic_Helper
         $transaction_id = $order->get_transaction_id();
         //For Legacy
         if( empty( $transaction_id ) ) {
-            $order_id = self::is_woocommerce_3() ? $order->get_id() : $order->id;
+            $order_id = $order->get_id();
             $transaction_id = get_post_meta( $order_id, self::BAMBORA_ONLINE_CLASSIC_TRANSACTION_ID_LEGACY, true );
             if( !empty( $transaction_id ) ) {
                 //Transform Legacy to new standards
@@ -212,7 +212,7 @@ class Bambora_Online_Classic_Helper
         }
 
         return add_query_arg( 'key', $order->order_key, add_query_arg(
-                'order', self::is_woocommerce_3() ? $order->get_id() : $order->id,
+                'order', $order->get_id(),
                 get_permalink( get_option( 'woocommerce_thanks_page_id' ) )
             )
         );
@@ -234,7 +234,7 @@ class Bambora_Online_Classic_Helper
 
         return add_query_arg( 'key', $order->get_order_key(), add_query_arg(
                 array(
-                    'order' => self::is_woocommerce_3() ? $order->get_id() : $order->id,
+                    'order' => $order->get_id(),
                     'payment_cancellation' => 'yes',
                 ),
                 get_permalink( get_option( 'woocommerce_cart_page_id' ) ) )
@@ -375,14 +375,6 @@ class Bambora_Online_Classic_Helper
         return Bambora_Online_Classic::get_instance();
     }
 
-    /**
-     * Determines if the current WooCommerce version is 3.x.x
-     *
-     * @return boolean
-     */
-    public static function is_woocommerce_3() {
-        return version_compare( WC()->version, '3.0', '>=' );
-    }
 
     /**
      * Determines if the current WooCommerce version is 3.1 or higher
@@ -413,13 +405,9 @@ class Bambora_Online_Classic_Helper
         $date_format = wc_date_format();
         $time_format = wc_time_format();
         $date_time_format = "{$date_format} - {$time_format}";
-        $formated_date = "";
-        if ( self::is_woocommerce_3_1() ) {
+
             $date_time = wc_string_to_datetime( $raw_date_time );
             $formated_date = wc_format_datetime( $date_time, $date_time_format );
-        } else {
-            $formated_date = date( $date_time_format, strtotime($raw_date_time));
-        }
 
         return $formated_date;
     }
