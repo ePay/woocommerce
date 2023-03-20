@@ -234,11 +234,7 @@ class Bambora_Online_Classic_Soap {
 			$result = $this->client->getEpayError( $epay_params );
 
 			if ( $result->getEpayErrorResult == 'true' ) {
-				if ( array_key_exists( 'epayresponsestring', $result ) ) {
-					$res = $result->epayresponsestring;
-				} else {
-					$res = $result->epayResponseString;
-				}
+				$res = $result->epayresponsestring ?? $result->epayResponseString ?? "Unknown error";
 			}
 		} catch ( Exception $ex ) {
 			$res .= ' ' . $ex->getMessage();
