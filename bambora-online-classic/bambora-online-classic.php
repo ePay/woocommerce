@@ -3,7 +3,7 @@
  * Plugin Name: Bambora Online ePay
  * Plugin URI: https://www.bambora.com
  * Description: Bambora Online ePay payment gateway for WooCommerce
- * Version: 5.3.3
+ * Version: 5.4.0
  * Author: Bambora Online
  * Author URI: https://www.bambora.com
  * Text Domain: bambora-online-classic
@@ -14,7 +14,7 @@
 
 
 define( 'BOCLASSIC_PATH', dirname( __FILE__ ) );
-define( 'BOCLASSIC_VERSION', '5.3.3' );
+define( 'BOCLASSIC_VERSION', '5.4.0' );
 
 add_action( 'plugins_loaded', 'init_bambora_online_classic', 0 );
 
@@ -427,20 +427,20 @@ function init_bambora_online_classic() {
         protected function create_invoice( $order, $minorunits ) {
             if ( $this->enableinvoice == 'yes' ) {
 
-                    $invoice['customer']['emailaddress'] = $order->get_billing_email();
-                    $invoice['customer']['firstname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_first_name() );
-                    $invoice['customer']['lastname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_last_name() );
-                    $invoice['customer']['address'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_address_1() );
-                    $invoice['customer']['zip'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_postcode() );
-                    $invoice['customer']['city'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_city() );
-                    $invoice['customer']['country'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_country() );
+				$invoice['customer']['emailaddress'] = $order->get_billing_email();
+				$invoice['customer']['firstname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_first_name() );
+				$invoice['customer']['lastname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_last_name() );
+				$invoice['customer']['address'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_address_1() );
+				$invoice['customer']['zip'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_postcode() );
+				$invoice['customer']['city'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_city() );
+				$invoice['customer']['country'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_country() );
 
-                    $invoice['shippingaddress']['firstname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_first_name() );
-                    $invoice['shippingaddress']['lastname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_last_name() );
-                    $invoice['shippingaddress']['address'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_address_1() );
-                    $invoice['shippingaddress']['zip'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_postcode() );
-                    $invoice['shippingaddress']['city'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_city() );
-                    $invoice['shippingaddress']['country'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_country() );
+				$invoice['shippingaddress']['firstname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_first_name() );
+				$invoice['shippingaddress']['lastname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_last_name() );
+				$invoice['shippingaddress']['address'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_address_1() );
+				$invoice['shippingaddress']['zip'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_postcode() );
+				$invoice['shippingaddress']['city'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_city() );
+				$invoice['shippingaddress']['country'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_country() );
 
                 $invoice['lines'] = $this->create_invoice_order_lines( $order, $minorunits );
 
@@ -881,8 +881,8 @@ function init_bambora_online_classic() {
                     'tax_data'      => array(),
                     'tax'           => 0,
                     );
-                    $fee_item = new WC_Order_Item_Fee();
-                    $fee_item->set_props( array(
+				$fee_item = new WC_Order_Item_Fee();
+				$fee_item->set_props( array(
                         'name' => $fee->name,
                         'tax_class' => $fee->tax_class,
                         'total' => $fee->amount,
@@ -890,8 +890,8 @@ function init_bambora_online_classic() {
                         'order_id' => $order->get_id(),
                         )
                     );
-                    $fee_item->save();
-                    $order->add_item( $fee_item );
+				$fee_item->save();
+				$order->add_item( $fee_item );
                 $total_incl_fee = $order->get_total() + $fee_amount;
                 $order->set_total( $total_incl_fee );
             }
