@@ -342,7 +342,7 @@ class Bambora_Online_Classic_Helper
             '<script type="text/javascript" charset="UTF-8" defer>BamboraOnlineClassicPaymentWindow.init(%s)</script>',
             $json_data
         );
-        $html .= '<script type="text/javascript" src="https://ssl.ditonlinebetalingssystem.dk/integration/ewindow/paymentwindow.js" charset="UTF-8"></script>';
+        $html .= '<script type="text/javascript" src="https://ssl.ditonlinebetalingssystem.dk/integration/ewindow/paymentwindow.js" charset="UTF-8" defer></script>';
         $html .= '</section>';
 
         return $html;
