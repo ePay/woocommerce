@@ -54,8 +54,14 @@ With Bambora ePay for WooCommerce, you are able to integrate the Bambora Online 
 == Changelog ==
 
 
+
+= 5.5.1
+* Defer call to external script also.
+
+* Fix for danish language
+
 = 5.5.0 =
-* Fix for finish language
+
 * Defer call for payment window until script is loaded
 
 
