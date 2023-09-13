@@ -3,7 +3,7 @@ Contributors: bambora
 Tags: woocommerce, woo commerce, payment, payment gateway, gateway, subscription, subscriptions, bambora, epay, integration, woocommerce bambora, woocommerce epay, woocommerce bambora online classic, psp
 Requires at least: 4.0.0
 Tested up to: 6.3
-Stable tag: 5.5.0
+Stable tag: 5.5.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 WC requires at least: 3.2
@@ -53,9 +53,10 @@ With Bambora ePay for WooCommerce, you are able to integrate the Bambora Online 
 
 == Changelog ==
 
+= 5.5.2 =
+* Declare that this module is not yet compatible with WooCommerce HPOS
 
-
-= 5.5.1
+= 5.5.1 =
 * Defer call to external script also.
 
 * Fix for danish language
