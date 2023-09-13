@@ -19,7 +19,7 @@ define( 'BOCLASSIC_VERSION', '5.5.1' );
 add_action( 'plugins_loaded', 'init_bambora_online_classic', 0 );
 
 /**
- * Initilize Bambora Online Classic
+ * Initilize Bambora Online Classic 
  *
  * @return void
  */
@@ -1421,4 +1421,11 @@ function init_bambora_online_classic() {
 
     $plugin_dir = basename( dirname( __FILE__ ) );
     load_plugin_textdomain( 'bambora-online-classic', false, $plugin_dir . '/languages' );
+
+    add_action( 'before_woocommerce_init', function () {
+        if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, false );
+        }
+    } );
+
 }
