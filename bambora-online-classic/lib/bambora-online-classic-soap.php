@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright (c) 2017. All rights reserved ePay A/S (a Bambora Company).
  *
@@ -22,23 +23,23 @@ class Bambora_Online_Classic_Soap {
 	 * Constructor
 	 *
 	 * @param mixed $pwd
-	 * @param bool  $subscription
+	 * @param bool $subscription
 	 */
 	public function __construct( $pwd = '', $subscription = false ) {
-		$this->pwd = $pwd;
+		$this->pwd            = $pwd;
 		$this->isSubscription = $subscription;
-		$this->proxy = new WP_HTTP_Proxy();
-		$options = array();
-		$service_url = $this->isSubscription ? 
-		'https://ssl.ditonlinebetalingssystem.dk/remote/subscription.asmx?WSDL' : 
-		'https://ssl.ditonlinebetalingssystem.dk/remote/payment.asmx?WSDL';
-		
+		$this->proxy          = new WP_HTTP_Proxy();
+		$options              = array();
+		$service_url          = $this->isSubscription ?
+			'https://ssl.ditonlinebetalingssystem.dk/remote/subscription.asmx?WSDL' :
+			'https://ssl.ditonlinebetalingssystem.dk/remote/payment.asmx?WSDL';
+
 		if ( $this->proxy->is_enabled() && $this->proxy->send_through_proxy( $service_url ) ) {
 			$options['proxy_host'] = $this->proxy->host();
 			$options['proxy_port'] = $this->proxy->port();
 
 			if ( $this->proxy->use_authentication() ) {
-				$options['proxy_login'] = $this->proxy->username();
+				$options['proxy_login']    = $this->proxy->username();
 				$options['proxy_password'] = $this->proxy->password();
 			}
 		}
@@ -60,25 +61,26 @@ class Bambora_Online_Classic_Soap {
 	 * @param mixed $instantcapture
 	 * @param mixed $group
 	 * @param mixed $email
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
 	public function authorize( $merchantnumber, $subscriptionid, $orderid, $amount, $currency, $instantcapture, $group, $email ) {
 		try {
-			$epay_params = array();
+			$epay_params                   = array();
 			$epay_params['merchantnumber'] = $merchantnumber;
 			$epay_params['subscriptionid'] = $subscriptionid;
-			$epay_params['orderid'] = $orderid;
-			$epay_params['amount'] = (string) $amount;
-			$epay_params['currency'] = $currency;
+			$epay_params['orderid']        = $orderid;
+			$epay_params['amount']         = (string) $amount;
+			$epay_params['currency']       = $currency;
 			$epay_params['instantcapture'] = $instantcapture;
-			$epay_params['group'] = $group;
-			$epay_params['email'] = $email;
-			$epay_params['pwd'] = $this->pwd;
-			$epay_params['fraud'] = 0;
-			$epay_params['transactionid'] = 0;
-			$epay_params['pbsresponse'] = '-1';
-			$epay_params['epayresponse'] = '-1';
+			$epay_params['group']          = $group;
+			$epay_params['email']          = $email;
+			$epay_params['pwd']            = $this->pwd;
+			$epay_params['fraud']          = 0;
+			$epay_params['transactionid']  = 0;
+			$epay_params['pbsresponse']    = '-1';
+			$epay_params['epayresponse']   = '-1';
 
 			$result = $this->client->authorize( $epay_params );
 		} catch ( Exception $ex ) {
@@ -93,19 +95,20 @@ class Bambora_Online_Classic_Soap {
 	 *
 	 * @param mixed $merchantnumber
 	 * @param mixed $subscriptionid
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
 	public function delete_subscription( $merchantnumber, $subscriptionid ) {
 		try {
-			$epay_params = array();
+			$epay_params                   = array();
 			$epay_params['merchantnumber'] = $merchantnumber;
 			$epay_params['subscriptionid'] = $subscriptionid;
-			$epay_params['pwd'] = $this->pwd;
-			$epay_params['epayresponse'] = '-1';
+			$epay_params['pwd']            = $this->pwd;
+			$epay_params['epayresponse']   = '-1';
 
 			$result = $this->client->deletesubscription( $epay_params );
-		} catch (Exception $ex) {
+		} catch ( Exception $ex ) {
 			throw $ex;
 		}
 
@@ -118,18 +121,19 @@ class Bambora_Online_Classic_Soap {
 	 * @param mixed $merchantnumber
 	 * @param mixed $transactionid
 	 * @param mixed $amount
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
 	public function capture( $merchantnumber, $transactionid, $amount ) {
 		try {
-			$epay_params = array();
+			$epay_params                   = array();
 			$epay_params['merchantnumber'] = $merchantnumber;
-			$epay_params['transactionid'] = $transactionid;
-			$epay_params['amount'] = (string) $amount;
-			$epay_params['pwd'] = $this->pwd;
-			$epay_params['pbsResponse'] = '-1';
-			$epay_params['epayresponse'] = '-1';
+			$epay_params['transactionid']  = $transactionid;
+			$epay_params['amount']         = (string) $amount;
+			$epay_params['pwd']            = $this->pwd;
+			$epay_params['pbsResponse']    = '-1';
+			$epay_params['epayresponse']   = '-1';
 
 			$result = $this->client->capture( $epay_params );
 		} catch ( Exception $ex ) {
@@ -145,18 +149,19 @@ class Bambora_Online_Classic_Soap {
 	 * @param mixed $merchantnumber
 	 * @param mixed $transactionid
 	 * @param mixed $amount
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
 	public function refund( $merchantnumber, $transactionid, $amount ) {
 		try {
-			$epay_params = array();
+			$epay_params                   = array();
 			$epay_params['merchantnumber'] = $merchantnumber;
-			$epay_params['transactionid'] = $transactionid;
-			$epay_params['amount'] = (string) $amount;
-			$epay_params['pwd'] = $this->pwd;
-			$epay_params['epayresponse'] = '-1';
-			$epay_params['pbsresponse'] = '-1';
+			$epay_params['transactionid']  = $transactionid;
+			$epay_params['amount']         = (string) $amount;
+			$epay_params['pwd']            = $this->pwd;
+			$epay_params['epayresponse']   = '-1';
+			$epay_params['pbsresponse']    = '-1';
 
 			$result = $this->client->credit( $epay_params );
 		} catch ( Exception $ex ) {
@@ -171,16 +176,17 @@ class Bambora_Online_Classic_Soap {
 	 *
 	 * @param mixed $merchantnumber
 	 * @param mixed $transactionid
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
 	public function delete( $merchantnumber, $transactionid ) {
 		try {
-			$epay_params = array();
+			$epay_params                   = array();
 			$epay_params['merchantnumber'] = $merchantnumber;
-			$epay_params['transactionid'] = $transactionid;
-			$epay_params['pwd'] = $this->pwd;
-			$epay_params['epayresponse'] = '-1';
+			$epay_params['transactionid']  = $transactionid;
+			$epay_params['pwd']            = $this->pwd;
+			$epay_params['epayresponse']   = '-1';
 
 			$result = $this->client->delete( $epay_params );
 		} catch ( Exception $ex ) {
@@ -195,16 +201,17 @@ class Bambora_Online_Classic_Soap {
 	 *
 	 * @param mixed $merchantnumber
 	 * @param mixed $transactionid
+	 *
 	 * @return mixed
 	 * @throws Exception
 	 */
 	public function get_transaction( $merchantnumber, $transactionid ) {
 		try {
-			$epay_params = array();
+			$epay_params                   = array();
 			$epay_params['merchantnumber'] = $merchantnumber;
-			$epay_params['transactionid'] = $transactionid;
-			$epay_params['pwd'] = $this->pwd;
-			$epay_params['epayresponse'] = '-1';
+			$epay_params['transactionid']  = $transactionid;
+			$epay_params['pwd']            = $this->pwd;
+			$epay_params['epayresponse']   = '-1';
 
 			$result = $this->client->gettransaction( $epay_params );
 		} catch ( Exception $ex ) {
@@ -219,17 +226,18 @@ class Bambora_Online_Classic_Soap {
 	 *
 	 * @param mixed $merchantnumber
 	 * @param mixed $epay_response_code
+	 *
 	 * @return mixed
 	 */
 	public function get_epay_error( $merchantnumber, $epay_response_code ) {
 		$res = 'Unable to lookup errorcode';
 		try {
-			$epay_params = array();
-			$epay_params['merchantnumber'] = $merchantnumber;
-			$epay_params['pwd'] = $this->pwd;
-			$epay_params['language'] = Bambora_Online_Classic_Helper::get_language_code( get_locale() );
+			$epay_params                     = array();
+			$epay_params['merchantnumber']   = $merchantnumber;
+			$epay_params['pwd']              = $this->pwd;
+			$epay_params['language']         = Bambora_Online_Classic_Helper::get_language_code( get_locale() );
 			$epay_params['epayresponsecode'] = $epay_response_code;
-			$epay_params['epayresponse'] = '-1';
+			$epay_params['epayresponse']     = '-1';
 
 			$result = $this->client->getEpayError( $epay_params );
 
@@ -248,20 +256,21 @@ class Bambora_Online_Classic_Soap {
 	 *
 	 * @param mixed $merchantnumber
 	 * @param mixed $pbs_response_code
+	 *
 	 * @return mixed
 	 */
 	public function get_pbs_error( $merchantnumber, $pbs_response_code ) {
 		$res = 'Unable to lookup errorcode';
 		try {
-			$epay_params = array();
+			$epay_params                   = array();
 			$epay_params['merchantnumber'] = $merchantnumber;
-			$epay_params['language'] = Bambora_Online_Classic_Helper::get_language_code( get_locale() );
+			$epay_params['language']       = Bambora_Online_Classic_Helper::get_language_code( get_locale() );
 			if ( $this->isSubscription ) {
 				$epay_params['pbsResponseCode'] = $pbs_response_code;
 			} else {
 				$epay_params['pbsresponsecode'] = $pbs_response_code;
 			}
-			$epay_params['pwd'] = $this->pwd;
+			$epay_params['pwd']          = $this->pwd;
 			$epay_params['epayresponse'] = '-1';
 
 			$result = $this->client->getPbsError( $epay_params );

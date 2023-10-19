@@ -12,31 +12,32 @@
  */
 
 var BamboraOnlineClassicPaymentWindow = BamboraOnlineClassicPaymentWindow ||
-(function() {
-	var _epayArgsJson = {};
-	return {
-		init: function (epayArgsJson) {
-			_epayArgsJson = epayArgsJson;
-		},
-		getJsonData: function() {
-			return _epayArgsJson;
-		},
-	}
-}());
+    (function () {
+        var _epayArgsJson = {};
+        return {
+            init: function (epayArgsJson) {
+                _epayArgsJson = epayArgsJson;
+            },
+            getJsonData: function () {
+                return _epayArgsJson;
+            },
+        }
+    }());
 
 var isPaymentWindowReady = false;
 var timerOpenWindow;
 
 function PaymentWindowReady() {
-	paymentwindow = new PaymentWindow(BamboraOnlineClassicPaymentWindow.getJsonData());
+    paymentwindow = new PaymentWindow(BamboraOnlineClassicPaymentWindow.getJsonData());
 
-	isPaymentWindowReady = true;
+    isPaymentWindowReady = true;
 }
+
 function openPaymentWindow() {
-	if (isPaymentWindowReady) {
-		clearInterval(timerOpenWindow);
-		paymentwindow.open();
-	}
+    if (isPaymentWindowReady) {
+        clearInterval(timerOpenWindow);
+        paymentwindow.open();
+    }
 }
 
 document.addEventListener('readystatechange', function (event) {
