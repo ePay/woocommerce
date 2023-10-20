@@ -39,7 +39,9 @@ class Bambora_Online_Classic_Log {
 	 * Logs are available inside the System status tab
 	 *
 	 * @access public
-	 * @param  string|array|object
+	 *
+	 * @param string|array|object
+	 *
 	 * @return void
 	 */
 	public function add( $param ) {
@@ -63,11 +65,12 @@ class Bambora_Online_Classic_Log {
 	 * Returns a link to the log files in the WP backend.
 	 */
 	public function get_admin_link() {
-		$log_path = wc_get_log_file_path( $this->_domain );
+		$log_path       = wc_get_log_file_path( $this->_domain );
 		$log_path_parts = explode( '/', $log_path );
+
 		return add_query_arg( array(
-			'page' => 'wc-status',
-			'tab' => 'logs',
+			'page'     => 'wc-status',
+			'tab'      => 'logs',
 			'log_file' => end( $log_path_parts ),
 		), admin_url( 'admin.php' ) );
 	}

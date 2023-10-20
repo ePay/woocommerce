@@ -3,32 +3,34 @@
     line-height: 6px;
 }
 
-    .boclassic-transactionid p:first-child,
-    .boclassic-paymenttype p:first-child {
-        font-size: 12px;
-        font-weight: 400;
-        color: grey;
-    }
-
-    .boclassic-transactionid p:last-child,
-    .boclassic-paymenttype p:last-child {
-        font-weight: 600;
-    }
-.boclassic-paymenttype-img {
-    float:right;
+.boclassic-transactionid p:first-child,
+.boclassic-paymenttype p:first-child {
+    font-size: 12px;
+    font-weight: 400;
+    color: grey;
 }
+
+.boclassic-transactionid p:last-child,
+.boclassic-paymenttype p:last-child {
+    font-weight: 600;
+}
+
+.boclassic-paymenttype-img {
+    float: right;
+}
+
 .boclassic-info-overview {
     font-weight: 600;
 }
 
-    .boclassic-info-overview p {
-        display: inline-block;
-        margin: 0;
-    }
+.boclassic-info-overview p {
+    display: inline-block;
+    margin: 0;
+}
 
-        .boclassic-info-overview p:last-child {
-            float: right;
-        }
+.boclassic-info-overview p:last-child {
+    float: right;
+}
 
 .boclassic-action-container {
     background-color: #eaecf0;
@@ -47,91 +49,91 @@
     width: 100%;
 }
 
-    .boclassic-action p,
-    .boclassic-action input,
-    .boclassic-action a {
-        display: inline-block;
-    }
+.boclassic-action p,
+.boclassic-action input,
+.boclassic-action a {
+    display: inline-block;
+}
 
-    .boclassic-action p {
-        padding: 6px 0px;
-        font-weight: 400;
-        line-height: 0.9;
-        color: #555;
-        text-align: center;
-        background-color: #eee;
-        border: 1px solid #ccc;
-        -ms-border-radius: 4px 0 0 4px;
-        border-radius: 4px 0 0 4px;
-        margin: 0;
-        width: 20%;
-    }
+.boclassic-action p {
+    padding: 6px 0px;
+    font-weight: 400;
+    line-height: 0.9;
+    color: #555;
+    text-align: center;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    -ms-border-radius: 4px 0 0 4px;
+    border-radius: 4px 0 0 4px;
+    margin: 0;
+    width: 20%;
+}
 
-    .boclassic-action input {
-        margin: 0;
-    }
+.boclassic-action input {
+    margin: 0;
+}
 
-    .boclassic-action a {
-        box-shadow: none !important;
-        height: inherit !important;
-        color: #ffffff !important;
-    }
+.boclassic-action a {
+    box-shadow: none !important;
+    height: inherit !important;
+    color: #ffffff !important;
+}
 
-    .boclassic-action .capture,
-    .boclassic-action .refund,
-    .boclassic-action .delete {
-        box-shadow: none !important;
-        height: inherit !important;
-        color: #ffffff !important;
-    }
+.boclassic-action .capture,
+.boclassic-action .refund,
+.boclassic-action .delete {
+    box-shadow: none !important;
+    height: inherit !important;
+    color: #ffffff !important;
+}
 
-    .boclassic-action .capture {
-        background-color: #5cb85c !important;
-        border-color: #4cae4c;
-        padding: 0;
-        -ms-border-radius: 0 4px 4px 0 !important;
-        border-radius: 0 4px 4px 0 !important;
-        width: 34%;
-        text-align: center;
-        line-height: 24px;
-    }
+.boclassic-action .capture {
+    background-color: #5cb85c !important;
+    border-color: #4cae4c;
+    padding: 0;
+    -ms-border-radius: 0 4px 4px 0 !important;
+    border-radius: 0 4px 4px 0 !important;
+    width: 34%;
+    text-align: center;
+    line-height: 24px;
+}
 
-        .boclassic-action .capture:hover {
-            background-color: #449d44 !important;
-            border-color: #398439 !important;
-        }
+.boclassic-action .capture:hover {
+    background-color: #449d44 !important;
+    border-color: #398439 !important;
+}
 
-    .boclassic-action .delete {
-        background-color: #d9534f !important;
-        border-color: #d43f3a !important;
-        -ms-border-radius: 4px !important;
-        border-radius: 4px !important;
-        float: right;
-        margin: 0 0 10px 0;
-        padding: 0;
-        width: 34%;
-        text-align: center;
-    }
+.boclassic-action .delete {
+    background-color: #d9534f !important;
+    border-color: #d43f3a !important;
+    -ms-border-radius: 4px !important;
+    border-radius: 4px !important;
+    float: right;
+    margin: 0 0 10px 0;
+    padding: 0;
+    width: 34%;
+    text-align: center;
+}
 
-        .boclassic-action .delete:hover {
-            background-color: #c9302c !important;
-            border-color: #ac2925 !important;
-        }
+.boclassic-action .delete:hover {
+    background-color: #c9302c !important;
+    border-color: #ac2925 !important;
+}
 
-    .boclassic-action .refund {
-        background-color: #f0ad4e !important;
-        border-color: #eea236 !important;
-        -ms-border-radius: 0 4px 4px 0 !important;
-        border-radius: 0 4px 4px 0 !important;
-        width: 34%;
-        text-align: center;
-        line-height: 24px;
-    }
+.boclassic-action .refund {
+    background-color: #f0ad4e !important;
+    border-color: #eea236 !important;
+    -ms-border-radius: 0 4px 4px 0 !important;
+    border-radius: 0 4px 4px 0 !important;
+    width: 34%;
+    text-align: center;
+    line-height: 24px;
+}
 
-        .boclassic-action .refund:hover {
-            background-color: #ec971f !important;
-            border-color: #d58512 !important;
-        }
+.boclassic-action .refund:hover {
+    background-color: #ec971f !important;
+    border-color: #d58512 !important;
+}
 
 .boclassic-amount {
     width: 45%;
@@ -149,9 +151,9 @@
     line-height: 9px;
 }
 
-    .boclassic-transaction-row-header td {
-        padding: 12px 10px 2px 10px;
-    }
+.boclassic-transaction-row-header td {
+    padding: 12px 10px 2px 10px;
+}
 
 .boclassic-transaction-row-header-user td {
     padding-top: 4px;
@@ -163,9 +165,9 @@
     padding-bottom: 10px;
 }
 
-    .boclassic-transaction td {
-        padding: 0 10px 7px 10px;
-    }
+.boclassic-transaction td {
+    padding: 0 10px 7px 10px;
+}
 
 #boclassic-format-error {
     display: none;

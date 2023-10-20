@@ -12,6 +12,7 @@
  * @package bambora_online_classic
  */
 
+use Automattic\WooCommerce\Utilities\FeaturesUtil;
 
 define( 'BOCLASSIC_PATH', dirname( __FILE__ ) );
 define( 'BOCLASSIC_VERSION', '5.5.2' );
@@ -19,325 +20,357 @@ define( 'BOCLASSIC_VERSION', '5.5.2' );
 add_action( 'plugins_loaded', 'init_bambora_online_classic', 0 );
 
 /**
- * Initilize Bambora Online Classic 
+ * Initilize Bambora Online Classic
  *
  * @return void
  */
 function init_bambora_online_classic() {
-    if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
-        return;
-    }
+	if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
+		return;
+	}
 
-    include( BOCLASSIC_PATH . '/lib/bambora-online-classic-soap.php' );
-    include( BOCLASSIC_PATH . '/lib/bambora-online-classic-helper.php' );
-    include( BOCLASSIC_PATH . '/lib/bambora-online-classic-log.php' );
+	include( BOCLASSIC_PATH . '/lib/bambora-online-classic-soap.php' );
+	include( BOCLASSIC_PATH . '/lib/bambora-online-classic-helper.php' );
+	include( BOCLASSIC_PATH . '/lib/bambora-online-classic-log.php' );
 
-    /**
-     * Gateway class
-     **/
-    class Bambora_Online_Classic extends WC_Payment_Gateway {
-        /**
-         * Singleton instance
-         *
-         * @var Bambora_Online_Classic
-         */
-        private static $_instance;
+	/**
+	 * Gateway class
+	 **/
+	class Bambora_Online_Classic extends WC_Payment_Gateway {
+		/**
+		 * Singleton instance
+		 *
+		 * @var Bambora_Online_Classic
+		 */
+		private static $_instance;
 
-        /**
-         * @param Bambora_Online_Classic_Log
-         */
-        private $_boclassic_log;
+		/**
+		 * @param Bambora_Online_Classic_Log
+		 */
+		private $_boclassic_log;
 
-        /**
-         * get_instance
-         *
-         * Returns a new instance of self, if it does not already exist.
-         *
-         * @access public
-         * @static
-         * @return Bambora_Online_Classic
-         */
-        public static function get_instance() {
-            if ( ! isset( self::$_instance ) ) {
-                self::$_instance = new self();
-            }
-            return self::$_instance;
-        }
+		/**
+		 * get_instance
+		 *
+		 * Returns a new instance of self, if it does not already exist.
+		 *
+		 * @access public
+		 * @static
+		 * @return Bambora_Online_Classic
+		 */
+		public static function get_instance() {
+			if ( ! isset( self::$_instance ) ) {
+				self::$_instance = new self();
+			}
 
-        /**
-         * Construct
-         */
-        public function __construct() {
-            $this->id = 'epay_dk';
-            $this->method_title = 'Bambora Online ePay';
-            $this->method_description = 'Bambora Online ePay enables easy and secure payments on your shop';
-            $this->icon = WP_PLUGIN_URL . '/' . plugin_basename( dirname( __FILE__ ) ) . '/bambora-logo.svg';
-            $this->has_fields = false;
+			return self::$_instance;
+		}
 
-            $this->supports = array(
-                'products',
-                'subscriptions',
-                'subscription_cancellation',
-                'subscription_suspension',
-                'subscription_reactivation',
-                'subscription_amount_changes',
-                'subscription_date_changes',
-                'subscription_payment_method_change_customer',
-	            'subscription_payment_method_change_admin',
-                'multiple_subscriptions'
-                );
+		/**
+		 * Construct
+		 */
+		public function __construct() {
+			$this->id                 = 'epay_dk';
+			$this->method_title       = 'Bambora Online ePay';
+			$this->method_description = 'Bambora Online ePay enables easy and secure payments on your shop';
+			$this->icon               = WP_PLUGIN_URL . '/' . plugin_basename( dirname( __FILE__ ) ) . '/bambora-logo.svg';
+			$this->has_fields         = false;
 
-            // Init the Bambora Online Classic logger
-            $this->_boclassic_log = new Bambora_Online_Classic_Log();
+			$this->supports = array(
+				'products',
+				'subscriptions',
+				'subscription_cancellation',
+				'subscription_suspension',
+				'subscription_reactivation',
+				'subscription_amount_changes',
+				'subscription_date_changes',
+				'subscription_payment_method_change_customer',
+				'subscription_payment_method_change_admin',
+				'multiple_subscriptions'
+			);
 
-            // Load the form fields.
-            $this->init_form_fields();
+			// Init the Bambora Online Classic logger
+			$this->_boclassic_log = new Bambora_Online_Classic_Log();
 
-            // Load the settings.
-            $this->init_settings();
+			// Load the form fields.
+			$this->init_form_fields();
 
-            // Initilize Bambora Online Classic Settings
-            $this->init_bambora_online_classic_settings();
+			// Load the settings.
+			$this->init_settings();
 
-            if ( $this->remoteinterface === 'yes' ) {
-                $this->supports = array_merge( $this->supports, array( 'refunds' ) );
-            }
-	        // Allow store managers to manually set Bambora online classic as the payment method on a subscription
-	        add_filter( 'woocommerce_subscription_payment_meta', array( $this, 'add_subscription_payment_meta' ), 10, 2 );
-        }
+			// Initilize Bambora Online Classic Settings
+			$this->init_bambora_online_classic_settings();
 
-        /**
-         * Initilize Bambora Online Classic Settings
-         */
-        public function init_bambora_online_classic_settings() {
-            // Define user set variables
-            $this->enabled = array_key_exists( 'enabled', $this->settings ) ? $this->settings['enabled'] : 'yes';
-            $this->title = array_key_exists( 'title', $this->settings ) ? $this->settings['title'] : 'Bambora Online ePay';
-            $this->description = array_key_exists( 'description', $this->settings ) ? $this->settings['description'] : 'Pay using Bambora Online ePay';
-            $this->merchant = array_key_exists( 'merchant', $this->settings ) ? $this->settings['merchant'] : '';
-            $this->windowid = array_key_exists( 'windowid', $this->settings ) ? $this->settings['windowid'] : '1';
-            $this->md5key = array_key_exists( 'md5key', $this->settings ) ? $this->settings['md5key'] : '';
-            $this->instantcapture = array_key_exists( 'instantcapture', $this->settings ) ? $this->settings['instantcapture'] : 'no';
-            $this->group = array_key_exists( 'group', $this->settings ) ? $this->settings['group'] : '';
-            $this->authmail = array_key_exists( 'authmail', $this->settings ) ? $this->settings['authmail'] : '';
-            $this->ownreceipt = array_key_exists( 'ownreceipt', $this->settings ) ? $this->settings['ownreceipt'] : 'no';
-            $this->remoteinterface = array_key_exists( 'remoteinterface', $this->settings ) ? $this->settings['remoteinterface'] : 'no';
-            $this->remotepassword = array_key_exists( 'remotepassword', $this->settings ) ? $this->settings['remotepassword'] : '';
-            $this->enableinvoice = array_key_exists( 'enableinvoice', $this->settings ) ? $this->settings['enableinvoice'] : 'no';
-            $this->addfeetoorder = array_key_exists( 'addfeetoorder', $this->settings ) ? $this->settings['addfeetoorder'] : 'no';
-            $this->enablemobilepaymentwindow = array_key_exists( 'enablemobilepaymentwindow', $this->settings ) ? $this->settings['enablemobilepaymentwindow'] : 'yes';
-            $this->roundingmode = array_key_exists( 'roundingmode', $this->settings ) ? $this->settings['roundingmode'] : Bambora_Online_Classic_Helper::ROUND_DEFAULT;
-            $this->captureonstatuscomplete = array_key_exists( 'captureonstatuscomplete', $this->settings ) ? $this->settings['captureonstatuscomplete'] : 'no';
-            $this->override_subscription_need_payment = array_key_exists( 'overridesubscriptionneedpayment', $this->settings ) ? $this->settings['overridesubscriptionneedpayment'] : 'yes';
-	        $this->rolecapturerefunddelete = array_key_exists( 'rolecapturerefunddelete', $this->settings ) ? $this->settings['rolecapturerefunddelete'] : 'shop_manager';
-        }
+			if ( $this->remoteinterface === 'yes' ) {
+				$this->supports = array_merge( $this->supports, array( 'refunds' ) );
+			}
+			// Allow store managers to manually set Bambora online classic as the payment method on a subscription
+			add_filter( 'woocommerce_subscription_payment_meta', array(
+				$this,
+				'add_subscription_payment_meta'
+			), 10, 2 );
+		}
 
-        /**
-         * Init hooks
-         */
-        public function init_hooks() {
-            // Actions
-            add_action( 'woocommerce_api_' . strtolower( get_class() ), array( $this, 'bambora_online_classic_callback' ) );
-            add_action( 'woocommerce_receipt_' . $this->id, array( $this, 'receipt_page' ) );
-            if ( is_admin() ) {
-                add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+		/**
+		 * Initilize Bambora Online Classic Settings
+		 */
+		public function init_bambora_online_classic_settings() {
+			// Define user set variables
+			$this->enabled                            = array_key_exists( 'enabled', $this->settings ) ? $this->settings['enabled'] : 'yes';
+			$this->title                              = array_key_exists( 'title', $this->settings ) ? $this->settings['title'] : 'Bambora Online ePay';
+			$this->description                        = array_key_exists( 'description', $this->settings ) ? $this->settings['description'] : 'Pay using Bambora Online ePay';
+			$this->merchant                           = array_key_exists( 'merchant', $this->settings ) ? $this->settings['merchant'] : '';
+			$this->windowid                           = array_key_exists( 'windowid', $this->settings ) ? $this->settings['windowid'] : '1';
+			$this->md5key                             = array_key_exists( 'md5key', $this->settings ) ? $this->settings['md5key'] : '';
+			$this->instantcapture                     = array_key_exists( 'instantcapture', $this->settings ) ? $this->settings['instantcapture'] : 'no';
+			$this->group                              = array_key_exists( 'group', $this->settings ) ? $this->settings['group'] : '';
+			$this->authmail                           = array_key_exists( 'authmail', $this->settings ) ? $this->settings['authmail'] : '';
+			$this->ownreceipt                         = array_key_exists( 'ownreceipt', $this->settings ) ? $this->settings['ownreceipt'] : 'no';
+			$this->remoteinterface                    = array_key_exists( 'remoteinterface', $this->settings ) ? $this->settings['remoteinterface'] : 'no';
+			$this->remotepassword                     = array_key_exists( 'remotepassword', $this->settings ) ? $this->settings['remotepassword'] : '';
+			$this->enableinvoice                      = array_key_exists( 'enableinvoice', $this->settings ) ? $this->settings['enableinvoice'] : 'no';
+			$this->addfeetoorder                      = array_key_exists( 'addfeetoorder', $this->settings ) ? $this->settings['addfeetoorder'] : 'no';
+			$this->enablemobilepaymentwindow          = array_key_exists( 'enablemobilepaymentwindow', $this->settings ) ? $this->settings['enablemobilepaymentwindow'] : 'yes';
+			$this->roundingmode                       = array_key_exists( 'roundingmode', $this->settings ) ? $this->settings['roundingmode'] : Bambora_Online_Classic_Helper::ROUND_DEFAULT;
+			$this->captureonstatuscomplete            = array_key_exists( 'captureonstatuscomplete', $this->settings ) ? $this->settings['captureonstatuscomplete'] : 'no';
+			$this->override_subscription_need_payment = array_key_exists( 'overridesubscriptionneedpayment', $this->settings ) ? $this->settings['overridesubscriptionneedpayment'] : 'yes';
+			$this->rolecapturerefunddelete            = array_key_exists( 'rolecapturerefunddelete', $this->settings ) ? $this->settings['rolecapturerefunddelete'] : 'shop_manager';
+		}
 
-                if( $this->remoteinterface == 'yes' ) {
-                    add_action( 'add_meta_boxes', array( $this, 'bambora_online_classic_meta_boxes' ) );
-                    add_action( 'wp_before_admin_bar_render', array( $this, 'bambora_online_classic_actions' ) );
-                    add_action( 'admin_notices', array( $this, 'bambora_online_classic_admin_notices' ) );
-                }
-            }
-	        if( $this->remoteinterface == 'yes' ) {
-		        if($this->captureonstatuscomplete === 'yes') {
-			        add_action( 'woocommerce_order_status_completed', array( $this, 'bambora_online_classic_order_status_completed' ) );
-		        }
-	        }
-            if ( class_exists( 'WC_Subscriptions_Order' ) ) {
-                // Subscriptions
-                add_action( 'woocommerce_scheduled_subscription_payment_' . $this->id, array( $this, 'scheduled_subscription_payment' ), 10, 2 );
-                add_action( 'woocommerce_subscription_cancelled_' . $this->id, array( $this, 'subscription_cancellation' ) );
+		/**
+		 * Init hooks
+		 */
+		public function init_hooks() {
+			// Actions
+			add_action( 'woocommerce_api_' . strtolower( get_class() ), array(
+				$this,
+				'bambora_online_classic_callback'
+			) );
+			add_action( 'woocommerce_receipt_' . $this->id, array( $this, 'receipt_page' ) );
+			if ( is_admin() ) {
+				add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
+					$this,
+					'process_admin_options'
+				) );
 
-                if( !is_admin() && $this->override_subscription_need_payment === 'yes') {
-                    // Maybe order don't need payment because lock.
-                    add_filter( 'woocommerce_order_needs_payment', array( $this, 'maybe_override_needs_payment' ), 10, 2 );
-                }
-            }
-            // Register styles!
-            add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_wc_bambora_online_classic_admin_styles_and_scripts' ) );
-            add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_wc_bambora_online_classic_front_styles' ) );
-        }
+				if ( $this->remoteinterface == 'yes' ) {
+					add_action( 'add_meta_boxes', array( $this, 'bambora_online_classic_meta_boxes' ) );
+					add_action( 'wp_before_admin_bar_render', array( $this, 'bambora_online_classic_actions' ) );
+					add_action( 'admin_notices', array( $this, 'bambora_online_classic_admin_notices' ) );
+				}
+			}
+			if ( $this->remoteinterface == 'yes' ) {
+				if ( $this->captureonstatuscomplete === 'yes' ) {
+					add_action( 'woocommerce_order_status_completed', array(
+						$this,
+						'bambora_online_classic_order_status_completed'
+					) );
+				}
+			}
+			if ( class_exists( 'WC_Subscriptions_Order' ) ) {
+				// Subscriptions
+				add_action( 'woocommerce_scheduled_subscription_payment_' . $this->id, array(
+					$this,
+					'scheduled_subscription_payment'
+				), 10, 2 );
+				add_action( 'woocommerce_subscription_cancelled_' . $this->id, array(
+					$this,
+					'subscription_cancellation'
+				) );
 
-        /**
-         * Show messages in the Administration
-         */
-        public function bambora_online_classic_admin_notices(){
-            Bambora_Online_Classic_Helper::echo_admin_notices();
-        }
+				if ( ! is_admin() && $this->override_subscription_need_payment === 'yes' ) {
+					// Maybe order don't need payment because lock.
+					add_filter( 'woocommerce_order_needs_payment', array(
+						$this,
+						'maybe_override_needs_payment'
+					), 10, 2 );
+				}
+			}
+			// Register styles!
+			add_action( 'admin_enqueue_scripts', array(
+				$this,
+				'enqueue_wc_bambora_online_classic_admin_styles_and_scripts'
+			) );
+			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_wc_bambora_online_classic_front_styles' ) );
+		}
 
-        /**
-         * Enqueue Admin Styles and Scripts
-         */
-        public function enqueue_wc_bambora_online_classic_admin_styles_and_scripts() {
-            wp_register_style( 'bambora_online_classic_admin_style', plugins_url( 'bambora-online-classic/style/bambora-online-classic-admin.css' ) );
-            wp_enqueue_style( 'bambora_online_classic_admin_style' );
+		/**
+		 * Show messages in the Administration
+		 */
+		public function bambora_online_classic_admin_notices() {
+			Bambora_Online_Classic_Helper::echo_admin_notices();
+		}
 
-            // Fix for load of Jquery time!
-            wp_enqueue_script( 'jquery' );
-            wp_enqueue_script( 'bambora_online_classic_admin', WP_PLUGIN_URL . '/' . plugin_basename( dirname( __FILE__ ) ) . '/scripts/bambora-online-classic-admin.js' );
-        }
+		/**
+		 * Enqueue Admin Styles and Scripts
+		 */
+		public function enqueue_wc_bambora_online_classic_admin_styles_and_scripts() {
+			wp_register_style( 'bambora_online_classic_admin_style', plugins_url( 'bambora-online-classic/style/bambora-online-classic-admin.css' ) );
+			wp_enqueue_style( 'bambora_online_classic_admin_style' );
 
-        /**
-         * Enqueue Frontend Styles and Scripts
-         */
-        public function enqueue_wc_bambora_online_classic_front_styles() {
-            wp_register_style( 'bambora_online_classic_front_style', plugins_url( 'bambora-online-classic/style/bambora-online-classic-front.css' ) );
-            wp_enqueue_style( 'bambora_online_classic_front_style' );
-        }
+			// Fix for load of Jquery time!
+			wp_enqueue_script( 'jquery' );
+			wp_enqueue_script( 'bambora_online_classic_admin', WP_PLUGIN_URL . '/' . plugin_basename( dirname( __FILE__ ) ) . '/scripts/bambora-online-classic-admin.js' );
+		}
 
-        /**
-         * Initialise Gateway Settings Form Fields
-         */
-        public function init_form_fields() {
-	        $roles = wp_roles()->roles;
-	        unset( $roles["administrator"] ); // Administrator will always have access so we do not include this role here.
-	        foreach ( $roles as $role => $details ) {
-		        $roles_options[ $role ] = translate_user_role( $details['name'] );
-	        }
-            $this->form_fields = array(
-                'enabled' => array(
-                    'title' => 'Activate module',
-                    'type' => 'checkbox',
-                    'label' => 'Enable Bambora Online ePay as a payment option.',
-                    'default' => 'yes'
-                ),
-                'title' => array(
-                    'title' => 'Title',
-                    'type' => 'text',
-                    'description' => 'The title of the payment method displayed to the customers.',
-                    'default' => 'Bambora Online ePay'
-                ),
-                'description' => array(
-                    'title' => 'Description',
-                    'type' => 'textarea',
-                    'description' => 'The description of the payment method displayed to the customers.',
-                    'default' => 'Pay using Bambora Online ePay'
-                ),
-                'merchant' => array(
-                    'title' => 'Merchant number',
-                    'type' => 'text',
-                    'description' => 'The number identif ying your ePay merchant account.',
-                    'default' => ''
-                ),
-                'windowid' => array(
-                    'title' => 'Window ID',
-                    'type' => 'text',
-                    'description' => 'The ID of the payment window to use.',
-                    'default' => '1'
-                ),
-                'md5key' => array(
-                    'title' => 'MD5 Key',
-                    'type' => 'text',
-                    'description' => 'The MD5 key is used to stamp data sent between WooCommerce and Bambora to prevent it from being tampered with. The MD5 key is optional but if used here, must be the same as in the ePay administration.',
-                    'default' => ''
-                ),
-                'remotepassword' => array(
-                    'title' => 'Remote password',
-                    'type' => 'password',
-                    'description' => 'if a Remote password is set in the ePay administration, then the same password must be entered here',
-                    'default' => '',
-                    'custom_attributes' => array( 'autocomplete' => 'new-password' ) // Fix for input field gets populated with saved login info
-                ),
-                'group' => array(
-                    'title' => 'Group',
-                    'type' => 'text',
-                    'description' => 'The group id is used for grouping payments in the ePay Administration',
-                    'default' => ''
-                ),
-                'authmail' => array(
-                    'title' => 'Auth Mail',
-                    'type' => 'text',
-                    'default' => '',
-                    'custom_attributes' => array( 'autocomplete' => 'new-password' )// Fix for input field gets populated with saved login info
-                ),
-                'instantcapture' => array(
-                    'title' => 'Instant capture',
-                    'type' => 'checkbox',
-                    'description' => 'Capture the payments at the same time they are authorized. In some countries, this is only permitted if the consumer receives the products right away Ex. digital products.',
-                    'default' => 'no'
-                ),
-                'ownreceipt' => array(
-                    'title' => 'Own receipt',
-                    'type' => 'checkbox',
-                    'description' => 'Immediately redirect your customer back to you shop after the payment completed.',
-                    'default' => 'no'
-                ),
-                'addfeetoorder' => array(
-                    'title' => 'Add surcharge to the order',
-                    'type' => 'checkbox',
-                    'description' => 'Display surcharge amount on the order as an item',
-                    'default' => 'no'
-                ),
-                'enableinvoice' => array(
-                    'title' => 'Invoice data',
-                    'type' => 'checkbox',
-                    'description' => 'Enable invoice data',
-                    'default' => 'no'
-                ),
-                'remoteinterface' => array(
-                    'title' => 'Remote interface',
-                    'type' => 'checkbox',
-                    'description' => 'Use remote interface',
-                    'default' => 'no'
-                ),
-                'enablemobilepaymentwindow' => array(
-                    'title' => 'Mobile Payment Window',
-                    'type' => 'checkbox',
-                    'description' => 'Enable Mobile Payment Window',
-                    'default' => 'yes'
-                ),
-                'captureonstatuscomplete' => array(
-                    'title' => 'Capture on status Completed',
-                    'type' => 'checkbox',
-                    'description' => 'When this is enabled the full payment will be captured when the order status changes to Completed',
-                    'default' => 'no'
-                ),
-                'roundingmode' => array(
-                    'title' => 'Rounding mode',
-                    'type' => 'select',
-                    'description' => 'Please select how you want the rounding of the amount sendt to the payment system',
-                    'options' => array( Bambora_Online_Classic_Helper::ROUND_DEFAULT => 'Default', Bambora_Online_Classic_Helper::ROUND_UP => 'Always up', Bambora_Online_Classic_Helper::ROUND_DOWN => 'Always down' ),
-                    'default' => 'normal'
-                ),
-                'overridesubscriptionneedpayment' => array(
-                    'title' => 'Subscription payment override',
-                    'type' => 'checkbox',
-                    'description' => 'When this is enabled it is possible to use coupons for x free payments on a subscription',
-                    'default' => 'yes'
-                ),'rolecapturerefunddelete' => array(
-		            'title' => 'User role for access to capture/refund/delete',
-		            'type' => 'select',
-		            'description' => 'Please select user role for access to capture/refund/delete (role administrator will always have access). The role also of course need to have access to view orders. ',
-		            'options' => $roles_options,
-		            'label' => 'User role',
-		            'default' => 'shop_manager'
-	            )
+		/**
+		 * Enqueue Frontend Styles and Scripts
+		 */
+		public function enqueue_wc_bambora_online_classic_front_styles() {
+			wp_register_style( 'bambora_online_classic_front_style', plugins_url( 'bambora-online-classic/style/bambora-online-classic-front.css' ) );
+			wp_enqueue_style( 'bambora_online_classic_front_style' );
+		}
 
-                );
-        }
+		/**
+		 * Initialise Gateway Settings Form Fields
+		 */
+		public function init_form_fields() {
+			$roles = wp_roles()->roles;
+			unset( $roles["administrator"] ); // Administrator will always have access so we do not include this role here.
+			foreach ( $roles as $role => $details ) {
+				$roles_options[ $role ] = translate_user_role( $details['name'] );
+			}
+			$this->form_fields = array(
+				'enabled'                         => array(
+					'title'   => 'Activate module',
+					'type'    => 'checkbox',
+					'label'   => 'Enable Bambora Online ePay as a payment option.',
+					'default' => 'yes'
+				),
+				'title'                           => array(
+					'title'       => 'Title',
+					'type'        => 'text',
+					'description' => 'The title of the payment method displayed to the customers.',
+					'default'     => 'Bambora Online ePay'
+				),
+				'description'                     => array(
+					'title'       => 'Description',
+					'type'        => 'textarea',
+					'description' => 'The description of the payment method displayed to the customers.',
+					'default'     => 'Pay using Bambora Online ePay'
+				),
+				'merchant'                        => array(
+					'title'       => 'Merchant number',
+					'type'        => 'text',
+					'description' => 'The number identif ying your ePay merchant account.',
+					'default'     => ''
+				),
+				'windowid'                        => array(
+					'title'       => 'Window ID',
+					'type'        => 'text',
+					'description' => 'The ID of the payment window to use.',
+					'default'     => '1'
+				),
+				'md5key'                          => array(
+					'title'       => 'MD5 Key',
+					'type'        => 'text',
+					'description' => 'The MD5 key is used to stamp data sent between WooCommerce and Bambora to prevent it from being tampered with. The MD5 key is optional but if used here, must be the same as in the ePay administration.',
+					'default'     => ''
+				),
+				'remotepassword'                  => array(
+					'title'             => 'Remote password',
+					'type'              => 'password',
+					'description'       => 'if a Remote password is set in the ePay administration, then the same password must be entered here',
+					'default'           => '',
+					'custom_attributes' => array( 'autocomplete' => 'new-password' )
+					// Fix for input field gets populated with saved login info
+				),
+				'group'                           => array(
+					'title'       => 'Group',
+					'type'        => 'text',
+					'description' => 'The group id is used for grouping payments in the ePay Administration',
+					'default'     => ''
+				),
+				'authmail'                        => array(
+					'title'             => 'Auth Mail',
+					'type'              => 'text',
+					'default'           => '',
+					'custom_attributes' => array( 'autocomplete' => 'new-password' )
+					// Fix for input field gets populated with saved login info
+				),
+				'instantcapture'                  => array(
+					'title'       => 'Instant capture',
+					'type'        => 'checkbox',
+					'description' => 'Capture the payments at the same time they are authorized. In some countries, this is only permitted if the consumer receives the products right away Ex. digital products.',
+					'default'     => 'no'
+				),
+				'ownreceipt'                      => array(
+					'title'       => 'Own receipt',
+					'type'        => 'checkbox',
+					'description' => 'Immediately redirect your customer back to you shop after the payment completed.',
+					'default'     => 'no'
+				),
+				'addfeetoorder'                   => array(
+					'title'       => 'Add surcharge to the order',
+					'type'        => 'checkbox',
+					'description' => 'Display surcharge amount on the order as an item',
+					'default'     => 'no'
+				),
+				'enableinvoice'                   => array(
+					'title'       => 'Invoice data',
+					'type'        => 'checkbox',
+					'description' => 'Enable invoice data',
+					'default'     => 'no'
+				),
+				'remoteinterface'                 => array(
+					'title'       => 'Remote interface',
+					'type'        => 'checkbox',
+					'description' => 'Use remote interface',
+					'default'     => 'no'
+				),
+				'enablemobilepaymentwindow'       => array(
+					'title'       => 'Mobile Payment Window',
+					'type'        => 'checkbox',
+					'description' => 'Enable Mobile Payment Window',
+					'default'     => 'yes'
+				),
+				'captureonstatuscomplete'         => array(
+					'title'       => 'Capture on status Completed',
+					'type'        => 'checkbox',
+					'description' => 'When this is enabled the full payment will be captured when the order status changes to Completed',
+					'default'     => 'no'
+				),
+				'roundingmode'                    => array(
+					'title'       => 'Rounding mode',
+					'type'        => 'select',
+					'description' => 'Please select how you want the rounding of the amount sendt to the payment system',
+					'options'     => array(
+						Bambora_Online_Classic_Helper::ROUND_DEFAULT => 'Default',
+						Bambora_Online_Classic_Helper::ROUND_UP      => 'Always up',
+						Bambora_Online_Classic_Helper::ROUND_DOWN    => 'Always down'
+					),
+					'default'     => 'normal'
+				),
+				'overridesubscriptionneedpayment' => array(
+					'title'       => 'Subscription payment override',
+					'type'        => 'checkbox',
+					'description' => 'When this is enabled it is possible to use coupons for x free payments on a subscription',
+					'default'     => 'yes'
+				),
+				'rolecapturerefunddelete'         => array(
+					'title'       => 'User role for access to capture/refund/delete',
+					'type'        => 'select',
+					'description' => 'Please select user role for access to capture/refund/delete (role administrator will always have access). The role also of course need to have access to view orders. ',
+					'options'     => $roles_options,
+					'label'       => 'User role',
+					'default'     => 'shop_manager'
+				)
 
-        /**
-         * Admin Panel Options
-         */
-        public function admin_options() {
-            $version = BOCLASSIC_VERSION;
+			);
+		}
 
-            $html = "<h3>Bambora Online ePay v{$version}</h3>";
-            $html .= Bambora_Online_Classic_Helper::create_admin_debug_section();
-            $html .= '<h3 class="wc-settings-sub-title">Module Configuration</h3>';
+		/**
+		 * Admin Panel Options
+		 */
+		public function admin_options() {
+			$version = BOCLASSIC_VERSION;
 
-	        if ( class_exists( 'sitepress' ) ) {
-			        $html .= '<div class="form-table">
+			$html = "<h3>Bambora Online ePay v{$version}</h3>";
+			$html .= Bambora_Online_Classic_Helper::create_admin_debug_section();
+			$html .= '<h3 class="wc-settings-sub-title">Module Configuration</h3>';
+
+			if ( class_exists( 'sitepress' ) ) {
+				$html .= '<div class="form-table">
 					<h2>You have WPML activated.</h2>
 					If you need to configure another merchant number for another language translate them under
 					<a href="admin.php?page=wpml-string-translation/menu/string-translation.php&context=admin_texts_woocommerce_epay_dk_settings" class="current" aria-currents="page">String Translation</a>
@@ -345,1087 +378,1149 @@ function init_bambora_online_classic() {
 					Subscriptions are currently only supported for the default merchant number.
 					</br>	
 </div>';
-	        }
+			}
+
+			$html .= '<table class="form-table">';
+
+			// Generate the HTML For the settings form.!
+			$html .= $this->generate_settings_html( array(), false );
+			$html .= '</table>';
+
+			echo ent2ncr( $html );
+		}
+
+		/**
+		 * When using a coupon for x free payments after the initial trial on a subscription then this will set the payment requirement to true
+		 *
+		 * @param bool $needs_payment
+		 * @param WC_Order $order
+		 *
+		 * @return bool
+		 */
+		public function maybe_override_needs_payment( $needs_payment, $order ) {
+
+			if ( ! $needs_payment && $this->id === $order->get_payment_method() && Bambora_Online_Classic_Helper::get_order_contains_subscription( $order, array( 'parent' ) ) ) {
+				$needs_payment = true;
+			}
+
+			return $needs_payment;
+		}
+
+		/**
+		 * Capture the payment on order status completed
+		 *
+		 * @param mixed $order_id
+		 */
+		public function bambora_online_classic_order_status_completed( $order_id ) {
+			if ( ! $this->module_check( $order_id ) ) {
+				return;
+			}
+
+			$order          = wc_get_order( $order_id );
+			$order_total    = $order->get_total();
+			$capture_result = $this->bambora_online_classic_capture_payment( $order_id, $order_total, '' );
+
+			if ( is_wp_error( $capture_result ) ) {
+				$message = $capture_result->get_error_message( 'bambora_online_classic_error' );
+				$this->_boclassic_log->add( $message );
+				Bambora_Online_Classic_Helper::add_admin_notices( Bambora_Online_Classic_Helper::ERROR, $message );
+			} else {
+				$message = sprintf( __( 'The Capture action was a success for order %s', 'bambora-online-classic' ), $order_id );
+				Bambora_Online_Classic_Helper::add_admin_notices( Bambora_Online_Classic_Helper::SUCCESS, $message );
+			}
+		}
 
 
-            $html .= '<table class="form-table">';
+		/**
+		 * There are no payment fields for epay, but we want to show the description if set.
+		 **/
+		public function payment_fields() {
+			$text_replace            = wptexturize( $this->description );
+			$paymentFieldDescription = wpautop( $text_replace );
+			$paymentLogos            = '<div id="boclassic_card_logos">';
 
-            // Generate the HTML For the settings form.!
-            $html .= $this->generate_settings_html( array(), false );
-            $html .= '</table>';
+			if ( class_exists( 'sitepress' ) ) {
+				$merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
+			} else {
+				$merchant_number = $this->merchant;
+			}
+			if ( $merchant_number ) {
+				$paymentLogos .= '<script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber=' . $merchant_number . '&direction=2&padding=2&rows=1&showdivs=0&logo=0&cardwidth=40&divid=boclassic_card_logos"></script>';
+			}
+			$paymentLogos            .= '</div>';
+			$paymentFieldDescription .= $paymentLogos;
+			echo $paymentFieldDescription;
+		}
 
-            echo ent2ncr( $html );
-        }
-
-        /**
-         * When using a coupon for x free payments after the initial trial on a subscription then this will set the payment requirement to true
-         *
-         * @param bool     $needs_payment
-         * @param WC_Order $order
-         * @return bool
-         */
-        public function maybe_override_needs_payment( $needs_payment, $order ) {
-
-            if (!$needs_payment && $this->id === $order->get_payment_method() &&  Bambora_Online_Classic_Helper::get_order_contains_subscription( $order, array( 'parent' ) ) ) {
-                $needs_payment = true;
-            }
-
-            return $needs_payment;
-        }
-
-        /**
-         * Capture the payment on order status completed
-         * @param mixed $order_id
-         */
-        public function bambora_online_classic_order_status_completed($order_id){
-            if( !$this->module_check( $order_id ) ) {
-                return;
-            }
-
-            $order = wc_get_order( $order_id );
-            $order_total = $order->get_total();
-            $capture_result = $this->bambora_online_classic_capture_payment($order_id, $order_total, '');
-
-            if ( is_wp_error( $capture_result ) ) {
-                $message = $capture_result->get_error_message( 'bambora_online_classic_error' );
-                $this->_boclassic_log->add( $message );
-                Bambora_Online_Classic_Helper::add_admin_notices(Bambora_Online_Classic_Helper::ERROR, $message);
-            } else {
-                $message = sprintf( __( 'The Capture action was a success for order %s', 'bambora-online-classic' ), $order_id );
-                Bambora_Online_Classic_Helper::add_admin_notices(Bambora_Online_Classic_Helper::SUCCESS, $message);
-            }
-        }
-
-
-        /**
-         * There are no payment fields for epay, but we want to show the description if set.
-         **/
-        public function payment_fields() {
-            $text_replace = wptexturize( $this->description );
-            $paymentFieldDescription = wpautop( $text_replace );
-            $paymentLogos = '<div id="boclassic_card_logos">';
-
-	        if ( class_exists( 'sitepress' ) ) {
-		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
-	        } else {
-		        $merchant_number = $this->merchant;
-	        }
-            if ( $merchant_number ) {
-            	$paymentLogos .= '<script type="text/javascript" src="https://relay.ditonlinebetalingssystem.dk/integration/paymentlogos/PaymentLogos.aspx?merchantnumber=' . $merchant_number . '&direction=2&padding=2&rows=1&showdivs=0&logo=0&cardwidth=40&divid=boclassic_card_logos"></script>';            }
-            $paymentLogos .= '</div>';
-            $paymentFieldDescription .= $paymentLogos;
-            echo $paymentFieldDescription;
-        }
-
-        /**
-         * Create invoice lines
-         *
-         * @param WC_Order $order
-         * @param int      $minorunits
-         * @return string
-         * */
-        protected function create_invoice( $order, $minorunits ) {
-            if ( $this->enableinvoice == 'yes' ) {
+		/**
+		 * Create invoice lines
+		 *
+		 * @param WC_Order $order
+		 * @param int $minorunits
+		 *
+		 * @return string
+		 * */
+		protected function create_invoice( $order, $minorunits ) {
+			if ( $this->enableinvoice == 'yes' ) {
 
 				$invoice['customer']['emailaddress'] = $order->get_billing_email();
-				$invoice['customer']['firstname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_first_name() );
-				$invoice['customer']['lastname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_last_name() );
-				$invoice['customer']['address'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_address_1() );
-				$invoice['customer']['zip'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_postcode() );
-				$invoice['customer']['city'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_city() );
-				$invoice['customer']['country'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_country() );
+				$invoice['customer']['firstname']    = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_first_name() );
+				$invoice['customer']['lastname']     = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_last_name() );
+				$invoice['customer']['address']      = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_address_1() );
+				$invoice['customer']['zip']          = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_postcode() );
+				$invoice['customer']['city']         = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_city() );
+				$invoice['customer']['country']      = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_billing_country() );
 
 				$invoice['shippingaddress']['firstname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_first_name() );
-				$invoice['shippingaddress']['lastname'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_last_name() );
-				$invoice['shippingaddress']['address'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_address_1() );
-				$invoice['shippingaddress']['zip'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_postcode() );
-				$invoice['shippingaddress']['city'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_city() );
-				$invoice['shippingaddress']['country'] = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_country() );
+				$invoice['shippingaddress']['lastname']  = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_last_name() );
+				$invoice['shippingaddress']['address']   = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_address_1() );
+				$invoice['shippingaddress']['zip']       = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_postcode() );
+				$invoice['shippingaddress']['city']      = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_city() );
+				$invoice['shippingaddress']['country']   = Bambora_Online_Classic_Helper::json_value_remove_special_characters( $order->get_shipping_country() );
 
-                $invoice['lines'] = $this->create_invoice_order_lines( $order, $minorunits );
+				$invoice['lines'] = $this->create_invoice_order_lines( $order, $minorunits );
 
-                return wp_json_encode( $invoice, JSON_UNESCAPED_UNICODE );
-            } else {
-                return '';
-            }
-        }
+				return wp_json_encode( $invoice, JSON_UNESCAPED_UNICODE );
+			} else {
+				return '';
+			}
+		}
 
-        /**
-         * Create Bambora Online Classic orderlines for invoice
-         *
-         * @param WC_Order $order
-         * @return array
-         */
-        protected function create_invoice_order_lines( $order, $minorunits ) {
-            $items = $order->get_items();
-            $invoice_order_lines = array();
-            foreach ( $items as $item ) {
-                $item_total = $order->get_line_total( $item, false, true );
-                if($item['qty'] > 1) {
-                    $item_price = $item_total / $item['qty'];
-                } else {
-                    $item_price = $item_total;
-                }
-                $item_vat_amount = $order->get_line_tax( $item );
-                $invoice_order_lines[] = array(
-                        'id' => $item['product_id'],
-                        'description' => Bambora_Online_Classic_Helper::json_value_remove_special_characters( $item['name'] ),
-                        'quantity' => $item['qty'],
-                        'price' => Bambora_Online_Classic_Helper::convert_price_to_minorunits( $item_price, $minorunits, $this->roundingmode ),
-                        'vat' => $item_vat_amount > 0 ? ( $item_vat_amount / $item_total ) * 100 : 0,
-                    );
-            }
-            $shipping_methods = $order->get_shipping_methods();
-            if ( $shipping_methods && count( $shipping_methods ) !== 0 ) {
-                $shipping_total = $order->get_shipping_total();
-                $shipping_tax = (float) $order->get_shipping_tax();
-                $shipping_method = reset( $shipping_methods );
-                $invoice_order_lines[] = array(
-                        'id' => $shipping_method->get_method_id(),
-                        'description' => $shipping_method->get_method_title(),
-                        'quantity' => 1,
-                        'price' => Bambora_Online_Classic_Helper::convert_price_to_minorunits( $shipping_total, $minorunits, $this->roundingmode ),
-                        'vat' => $shipping_tax > 0 ? ( $shipping_tax / $shipping_total ) * 100  : 0,
-                    );
-            }
+		/**
+		 * Create Bambora Online Classic orderlines for invoice
+		 *
+		 * @param WC_Order $order
+		 *
+		 * @return array
+		 */
+		protected function create_invoice_order_lines( $order, $minorunits ) {
+			$items               = $order->get_items();
+			$invoice_order_lines = array();
+			foreach ( $items as $item ) {
+				$item_total = $order->get_line_total( $item, false, true );
+				if ( $item['qty'] > 1 ) {
+					$item_price = $item_total / $item['qty'];
+				} else {
+					$item_price = $item_total;
+				}
+				$item_vat_amount       = $order->get_line_tax( $item );
+				$invoice_order_lines[] = array(
+					'id'          => $item['product_id'],
+					'description' => Bambora_Online_Classic_Helper::json_value_remove_special_characters( $item['name'] ),
+					'quantity'    => $item['qty'],
+					'price'       => Bambora_Online_Classic_Helper::convert_price_to_minorunits( $item_price, $minorunits, $this->roundingmode ),
+					'vat'         => $item_vat_amount > 0 ? ( $item_vat_amount / $item_total ) * 100 : 0,
+				);
+			}
+			$shipping_methods = $order->get_shipping_methods();
+			if ( $shipping_methods && count( $shipping_methods ) !== 0 ) {
+				$shipping_total        = $order->get_shipping_total();
+				$shipping_tax          = (float) $order->get_shipping_tax();
+				$shipping_method       = reset( $shipping_methods );
+				$invoice_order_lines[] = array(
+					'id'          => $shipping_method->get_method_id(),
+					'description' => $shipping_method->get_method_title(),
+					'quantity'    => 1,
+					'price'       => Bambora_Online_Classic_Helper::convert_price_to_minorunits( $shipping_total, $minorunits, $this->roundingmode ),
+					'vat'         => $shipping_tax > 0 ? ( $shipping_tax / $shipping_total ) * 100 : 0,
+				);
+			}
 
-            return $invoice_order_lines;
-        }
+			return $invoice_order_lines;
+		}
 
-        /**
-         * Process the payment and return the result
-         *
-         * @param int $order_id
-         * @return string[]
-         */
-        public function process_payment( $order_id ) {
-            $order = wc_get_order( $order_id );
+		/**
+		 * Process the payment and return the result
+		 *
+		 * @param int $order_id
+		 *
+		 * @return string[]
+		 */
+		public function process_payment( $order_id ) {
+			$order = wc_get_order( $order_id );
 
-            return array(
-                'result' => 'success',
-                'redirect' => $order->get_checkout_payment_url( true ),
-            );
-        }
+			return array(
+				'result'   => 'success',
+				'redirect' => $order->get_checkout_payment_url( true ),
+			);
+		}
 
-        /**
-         * Process Refund
-         *
-         * @param int        $order_id
-         * @param float|null $amount
-         * @param string     $reason
-         * @return bool
-         */
-        public function process_refund( $order_id, $amount = null, $reason = '' ) {
-	        $user = wp_get_current_user();
-	        if ( in_array( $this->rolecapturerefunddelete, (array) $user->roles )  || in_array( 'administrator', (array) $user->roles )  ) {
-		        //The user has the role required for  "Capture, Refund, Delete"  and can perform those actions.
-	        }else{
-		        //The user can only view the data.
-		        return new WP_Error( 'notpermitted', __( "Your user role is not allowed to refund via Bambora Online", "bambora-online-classic" ) );
-	        }
+		/**
+		 * Process Refund
+		 *
+		 * @param int $order_id
+		 * @param float|null $amount
+		 * @param string $reason
+		 *
+		 * @return bool
+		 */
+		public function process_refund( $order_id, $amount = null, $reason = '' ) {
+			$user = wp_get_current_user();
+			if ( in_array( $this->rolecapturerefunddelete, (array) $user->roles ) || in_array( 'administrator', (array) $user->roles ) ) {
+				//The user has the role required for  "Capture, Refund, Delete"  and can perform those actions.
+			} else {
+				//The user can only view the data.
+				return new WP_Error( 'notpermitted', __( "Your user role is not allowed to refund via Bambora Online", "bambora-online-classic" ) );
+			}
 
-            if ( ! isset( $amount ) ) {
-                return true;
-            }
-	        if ( $amount < 1 ) {
-		        return new WP_Error( 'toolow', __( "You have to refund a higher amount than 0.", "bambora-online-classic" ) );
-	        }
+			if ( ! isset( $amount ) ) {
+				return true;
+			}
+			if ( $amount < 1 ) {
+				return new WP_Error( 'toolow', __( "You have to refund a higher amount than 0.", "bambora-online-classic" ) );
+			}
 
-            $refund_result = $this->bambora_online_classic_refund_payment($order_id, $amount, '');
-            if ( is_wp_error( $refund_result ) ) {
-                return $refund_result;
-            } else {
-                $message = __( "The Refund action was a success for order {$order_id}", 'bambora-online-classic' );
-                Bambora_Online_Classic_Helper::add_admin_notices(Bambora_Online_Classic_Helper::SUCCESS, $message);
-            }
+			$refund_result = $this->bambora_online_classic_refund_payment( $order_id, $amount, '' );
+			if ( is_wp_error( $refund_result ) ) {
+				return $refund_result;
+			} else {
+				$message = __( "The Refund action was a success for order {$order_id}", 'bambora-online-classic' );
+				Bambora_Online_Classic_Helper::add_admin_notices( Bambora_Online_Classic_Helper::SUCCESS, $message );
+			}
 
-            return true;
-        }
+			return true;
+		}
 
-        /**
-         * Handle scheduled subscription payments
-         *
-         * @param mixed    $amount_to_charge
-         * @param WC_Order $renewal_order
-         */
-        public function scheduled_subscription_payment( $amount_to_charge, $renewal_order ) {
-            $subscription = Bambora_Online_Classic_Helper::get_subscriptions_for_renewal_order( $renewal_order );
-            $result = $this->process_subscription_payment( $amount_to_charge, $renewal_order, $subscription );
-            $renewal_order_id = $renewal_order->get_id();
+		/**
+		 * Handle scheduled subscription payments
+		 *
+		 * @param mixed $amount_to_charge
+		 * @param WC_Order $renewal_order
+		 */
+		public function scheduled_subscription_payment( $amount_to_charge, $renewal_order ) {
+			$subscription     = Bambora_Online_Classic_Helper::get_subscriptions_for_renewal_order( $renewal_order );
+			$result           = $this->process_subscription_payment( $amount_to_charge, $renewal_order, $subscription );
+			$renewal_order_id = $renewal_order->get_id();
 
-            // Remove the Bambora Online Classic subscription id copyid from the subscription
-            delete_post_meta( $renewal_order_id, Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID );
+			// Remove the Bambora Online Classic subscription id copyid from the subscription
 
-            if ( is_wp_error( $result ) ) {
-                $message = sprintf( __( 'Bambora Online ePay Subscription could not be authorized for renewal order # %s - %s', 'bambora-online-classic' ), $renewal_order_id, $result->get_error_message( 'bambora_online_classic_error' ) );
-                $renewal_order->update_status( 'failed', $message );
-                $this->_boclassic_log->add( $message );
-            }
-        }
+			$renewal_order->delete_meta_data( Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID );
+			$renewal_order->save();
+			if ( is_wp_error( $result ) ) {
+				$message = sprintf( __( 'Bambora Online ePay Subscription could not be authorized for renewal order # %s - %s', 'bambora-online-classic' ), $renewal_order_id, $result->get_error_message( 'bambora_online_classic_error' ) );
+				$renewal_order->update_status( 'failed', $message );
+				$this->_boclassic_log->add( $message );
+			}
+		}
 
-        /**
-         * Process a subscription renewal
-         *
-         * @param mixed           $amount
-         * @param WC_Order        $renewal_order
-         * @param WC_Subscription $subscription
-         */
-        public function process_subscription_payment( $amount, $renewal_order, $subscription ) {
-            try {
-                $bambora_subscription_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_subscription_id( $subscription );
-                if ( strlen( $bambora_subscription_id ) === 0 ) {
-                    return new WP_Error( 'bambora_online_classic_error', __( 'Bambora Online ePay Subscription id was not found', 'bambora-online-classic' ) );
-                }
+		/**
+		 * Process a subscription renewal
+		 *
+		 * @param mixed $amount
+		 * @param WC_Order $renewal_order
+		 * @param WC_Subscription $subscription
+		 */
+		public function process_subscription_payment( $amount, $renewal_order, $subscription ) {
+			try {
+				$bambora_subscription_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_subscription_id( $subscription );
+				if ( strlen( $bambora_subscription_id ) === 0 ) {
+					return new WP_Error( 'bambora_online_classic_error', __( 'Bambora Online ePay Subscription id was not found', 'bambora-online-classic' ) );
+				}
 
-                $order_currency =$renewal_order->get_currency();
-                $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $order_currency );
-                $amount = Bambora_Online_Classic_Helper::convert_price_to_minorunits( $amount, $minorunits, $this->roundingmode );
-                $renewal_order_id = $renewal_order->get_id();
+				$order_currency   = $renewal_order->get_currency();
+				$minorunits       = Bambora_Online_Classic_Helper::get_currency_minorunits( $order_currency );
+				$amount           = Bambora_Online_Classic_Helper::convert_price_to_minorunits( $amount, $minorunits, $this->roundingmode );
+				$renewal_order_id = $renewal_order->get_id();
 
-                $webservice = new Bambora_Online_Classic_Soap( $this->remotepassword, true );
-                $authorize_response = $webservice->authorize( $this->merchant, $bambora_subscription_id, $renewal_order_id, $amount, Bambora_Online_Classic_Helper::get_iso_code( $order_currency ), (bool) Bambora_Online_Classic_Helper::yes_no_to_int( $this->instantcapture ), $this->group, $this->authmail );
-                if ( $authorize_response->authorizeResult === false ) {
-                    $error_message = '';
-                    if ( $authorize_response->epayresponse != '-1' ) {
-                        $error_message = $webservice->get_epay_error( $this->merchant, $authorize_response->epayresponse );
-                    } elseif ( $authorize_response->pbsresponse != '-1' ) {
-                        $error_message = $webservice->get_pbs_error( $this->merchant, $authorize_response->pbsresponse );
-                    }
-                    return new WP_Error( 'bambora_online_classic_error', $error_message );
-                }
-                $renewal_order->payment_complete( $authorize_response->transactionid );
+				$webservice         = new Bambora_Online_Classic_Soap( $this->remotepassword, true );
+				$authorize_response = $webservice->authorize( $this->merchant, $bambora_subscription_id, $renewal_order_id, $amount, Bambora_Online_Classic_Helper::get_iso_code( $order_currency ), (bool) Bambora_Online_Classic_Helper::yes_no_to_int( $this->instantcapture ), $this->group, $this->authmail );
+				if ( $authorize_response->authorizeResult === false ) {
+					$error_message = '';
+					if ( $authorize_response->epayresponse != '-1' ) {
+						$error_message = $webservice->get_epay_error( $this->merchant, $authorize_response->epayresponse );
+					} elseif ( $authorize_response->pbsresponse != '-1' ) {
+						$error_message = $webservice->get_pbs_error( $this->merchant, $authorize_response->pbsresponse );
+					}
 
-                // Add order note
-                $message = sprintf( __( 'Bambora Online ePay Subscription was authorized for renewal order %s with transaction id %s','bambora-online-classic' ), $renewal_order_id, $authorize_response->transactionid );
-                $renewal_order->add_order_note( $message );
-                $subscription->add_order_note( $message );
+					return new WP_Error( 'bambora_online_classic_error', $error_message );
+				}
+				$renewal_order->payment_complete( $authorize_response->transactionid );
 
-                return true;
-            }
-            catch ( Exception $ex ) {
-                return new WP_Error( 'bambora_online_classic_error', $ex->getMessage() );
-            }
-        }
+				// Add order note
+				$message = sprintf( __( 'Bambora Online ePay Subscription was authorized for renewal order %s with transaction id %s', 'bambora-online-classic' ), $renewal_order_id, $authorize_response->transactionid );
+				$renewal_order->add_order_note( $message );
+				$subscription->add_order_note( $message );
 
-        /**
-         * Cancel a subscription
-         *
-         * @param WC_Subscription $subscription
-         * @param bool            $force_delete
-         */
-        public function subscription_cancellation( $subscription, $force_delete = false ) {
-            if ( 'cancelled' === $subscription->get_status() || $force_delete ) {
-                $result = $this->process_subscription_cancellation( $subscription );
+				return true;
+			} catch ( Exception $ex ) {
+				return new WP_Error( 'bambora_online_classic_error', $ex->getMessage() );
+			}
+		}
 
-                if ( is_wp_error( $result ) ) {
-                    $message = sprintf( __( 'Bambora Online ePay Subscription could not be canceled - %s', 'bambora-online-classic' ), $result->get_error_message( 'bambora_online_classic_error' ) );
-                    $subscription->add_order_note( $message );
-                    $this->_boclassic_log->add( $message );
-                }
-            }
-        }
+		/**
+		 * Cancel a subscription
+		 *
+		 * @param WC_Subscription $subscription
+		 * @param bool $force_delete
+		 */
+		public function subscription_cancellation( $subscription, $force_delete = false ) {
+			if ( 'cancelled' === $subscription->get_status() || $force_delete ) {
+				$result = $this->process_subscription_cancellation( $subscription );
 
-        /**
-         * Process canceling of a subscription
-         *
-         * @param WC_Subscription $subscription
-         */
-        protected function process_subscription_cancellation( $subscription ) {
-            try {
-                if ( Bambora_Online_Classic_Helper::order_is_subscription( $subscription ) ) {
-                    $bambora_subscription_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_subscription_id( $subscription );
-                    if ( strlen( $bambora_subscription_id ) === 0 ) {
-                        $order_note = __( 'Bambora Online ePay Subscription ID was not found', 'bambora-online-classic' );
-                        return new WP_Error( 'bambora_online_classic_error', $order_note );
-                    }
+				if ( is_wp_error( $result ) ) {
+					$message = sprintf( __( 'Bambora Online ePay Subscription could not be canceled - %s', 'bambora-online-classic' ), $result->get_error_message( 'bambora_online_classic_error' ) );
+					$subscription->add_order_note( $message );
+					$this->_boclassic_log->add( $message );
+				}
+			}
+		}
 
-                    $webservice = new Bambora_Online_Classic_Soap( $this->remotepassword, true );
-                    $delete_subscription_response = $webservice->delete_subscription( $this->merchant, $bambora_subscription_id );
-                    if ( $delete_subscription_response->deletesubscriptionResult === true ) {
-                        $subscription->add_order_note( sprintf( __( 'Subscription successfully Cancelled. - Bambora Online ePay Subscription Id: %s', 'bambora-online-classic' ), $bambora_subscription_id ) );
-                    } else {
-                        $order_note = sprintf( __( 'Bambora Online ePay Subscription Id: %s', 'bambora-online-classic' ), $bambora_subscription_id );
-                        if ( $delete_subscription_response->epayresponse != '-1' ) {
-                            $order_note .= ' - ' . $webservice->get_epay_error( $this->merchant, $delete_subscription_response->epayresponse );
-                        }
-                        return new WP_Error( 'bambora_online_classic_error', $order_note );
-                    }
-                }
-                return true;
-            }
-            catch ( Exception $ex ) {
-                return new WP_Error( 'bambora_online_classic_error', $ex->getMessage() );
-            }
-        }
+		/**
+		 * Process canceling of a subscription
+		 *
+		 * @param WC_Subscription $subscription
+		 */
+		protected function process_subscription_cancellation( $subscription ) {
+			try {
+				if ( Bambora_Online_Classic_Helper::order_is_subscription( $subscription ) ) {
+					$bambora_subscription_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_subscription_id( $subscription );
+					if ( strlen( $bambora_subscription_id ) === 0 ) {
+						$order_note = __( 'Bambora Online ePay Subscription ID was not found', 'bambora-online-classic' );
 
-        /**
-         * receipt_page
-         **/
-        public function receipt_page( $order_id ) {
-            $order = wc_get_order( $order_id );
-            $is_request_to_change_payment_method = Bambora_Online_Classic_Helper::order_is_subscription( $order );
+						return new WP_Error( 'bambora_online_classic_error', $order_note );
+					}
 
-            $order_currency = $order->get_currency();
-            $order_total = $order->get_total();
-            $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $order_currency );
+					$webservice                   = new Bambora_Online_Classic_Soap( $this->remotepassword, true );
+					$delete_subscription_response = $webservice->delete_subscription( $this->merchant, $bambora_subscription_id );
+					if ( $delete_subscription_response->deletesubscriptionResult === true ) {
+						$subscription->add_order_note( sprintf( __( 'Subscription successfully Cancelled. - Bambora Online ePay Subscription Id: %s', 'bambora-online-classic' ), $bambora_subscription_id ) );
+					} else {
+						$order_note = sprintf( __( 'Bambora Online ePay Subscription Id: %s', 'bambora-online-classic' ), $bambora_subscription_id );
+						if ( $delete_subscription_response->epayresponse != '-1' ) {
+							$order_note .= ' - ' . $webservice->get_epay_error( $this->merchant, $delete_subscription_response->epayresponse );
+						}
 
-	        if ( class_exists( 'sitepress' ) ) {
-		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
-	        } else {
-		        $merchant_number = $this->merchant;
-	        }
+						return new WP_Error( 'bambora_online_classic_error', $order_note );
+					}
+				}
 
-            $epay_args = array(
-                'encoding' => 'UTF-8',
-                'cms' => Bambora_Online_Classic_Helper::get_module_header_info(),
-                'windowstate' => "3",
-                'mobile' => Bambora_Online_Classic_Helper::yes_no_to_int( $this->enablemobilepaymentwindow ),
-                'merchantnumber' => $merchant_number,
-                'windowid' => $this->windowid,
-                'currency' => $order_currency,
-                'amount' => Bambora_Online_Classic_Helper::convert_price_to_minorunits( $order_total, $minorunits, $this->roundingmode ),
-                'orderid' => $this->clean_order_number($order->get_order_number()),
-                'accepturl' => Bambora_Online_Classic_Helper::get_accept_url( $order ),
-                'cancelurl' => Bambora_Online_Classic_Helper::get_decline_url( $order ),
-                'callbackurl' => apply_filters( 'bambora_online_classic_callback_url', Bambora_Online_Classic_Helper::get_bambora_online_classic_callback_url( $order_id ) ),
-                'mailreceipt' => $this->authmail,
-                'instantcapture' => Bambora_Online_Classic_Helper::yes_no_to_int( $this->instantcapture ),
-                'group' => $this->group,
-                'language' => Bambora_Online_Classic_Helper::get_language_code( get_locale() ),
-                'ownreceipt' => Bambora_Online_Classic_Helper::yes_no_to_int( $this->ownreceipt ),
-                'timeout' => '60',
-            );
+				return true;
+			} catch ( Exception $ex ) {
+				return new WP_Error( 'bambora_online_classic_error', $ex->getMessage() );
+			}
+		}
 
-            if ( ! $is_request_to_change_payment_method ) {
-                $epay_args['invoice'] = $this->create_invoice( $order, $minorunits );
-            }
+		/**
+		 * receipt_page
+		 **/
+		public function receipt_page( $order_id ) {
+			$order                               = wc_get_order( $order_id );
+			$is_request_to_change_payment_method = Bambora_Online_Classic_Helper::order_is_subscription( $order );
 
-            if ( Bambora_Online_Classic_Helper::woocommerce_subscription_plugin_is_active() && ( Bambora_Online_Classic_Helper::order_contains_subscription( $order ) || $is_request_to_change_payment_method ) ) {
-                $epay_args['subscription'] = 1;
-            }
+			$order_currency = $order->get_currency();
+			$order_total    = $order->get_total();
+			$minorunits     = Bambora_Online_Classic_Helper::get_currency_minorunits( $order_currency );
 
-	        if ( class_exists( 'sitepress' ) ) {
-		        $md5_key = Bambora_Online_Classic_Helper::getWPMLOptionValue( 'md5key', Bambora_Online_Classic_Helper::getWPMLOrderLanguage( $order ), $this->md5key );
-	        } else {
-		        $md5_key = $this->md5key;
-	        }
+			if ( class_exists( 'sitepress' ) ) {
+				$merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
+			} else {
+				$merchant_number = $this->merchant;
+			}
 
-            if ( strlen(  $md5_key ) > 0 ) {
-                $hash = '';
-                foreach ( $epay_args as $value ) {
-                    $hash .= $value;
-                }
-                $epay_args['hash'] = md5( $hash . $md5_key );
-            }
-	        $epay_args = apply_filters( 'bambora_online_classic_epay_args', $epay_args, $order_id );
-            $epay_args_json = wp_json_encode( $epay_args );
-            $payment_html = Bambora_Online_Classic_Helper::create_bambora_online_classic_payment_html( $epay_args_json );
+			$epay_args = array(
+				'encoding'       => 'UTF-8',
+				'cms'            => Bambora_Online_Classic_Helper::get_module_header_info(),
+				'windowstate'    => "3",
+				'mobile'         => Bambora_Online_Classic_Helper::yes_no_to_int( $this->enablemobilepaymentwindow ),
+				'merchantnumber' => $merchant_number,
+				'windowid'       => $this->windowid,
+				'currency'       => $order_currency,
+				'amount'         => Bambora_Online_Classic_Helper::convert_price_to_minorunits( $order_total, $minorunits, $this->roundingmode ),
+				'orderid'        => $this->clean_order_number( $order->get_order_number() ),
+				'accepturl'      => Bambora_Online_Classic_Helper::get_accept_url( $order ),
+				'cancelurl'      => Bambora_Online_Classic_Helper::get_decline_url( $order ),
+				'callbackurl'    => apply_filters( 'bambora_online_classic_callback_url', Bambora_Online_Classic_Helper::get_bambora_online_classic_callback_url( $order_id ) ),
+				'mailreceipt'    => $this->authmail,
+				'instantcapture' => Bambora_Online_Classic_Helper::yes_no_to_int( $this->instantcapture ),
+				'group'          => $this->group,
+				'language'       => Bambora_Online_Classic_Helper::get_language_code( get_locale() ),
+				'ownreceipt'     => Bambora_Online_Classic_Helper::yes_no_to_int( $this->ownreceipt ),
+				'timeout'        => '60',
+			);
 
-            echo ent2ncr( $payment_html );
-        }
+			if ( ! $is_request_to_change_payment_method ) {
+				$epay_args['invoice'] = $this->create_invoice( $order, $minorunits );
+			}
 
-        /**
-         * Removes any special charactors from the order number
-         *
-         * @param string $order_number
-         * @return string
-         */
-        protected function clean_order_number($order_number) {
-            return preg_replace('/[^a-z\d ]/i', "", $order_number );
-        }
+			if ( Bambora_Online_Classic_Helper::woocommerce_subscription_plugin_is_active() && ( Bambora_Online_Classic_Helper::order_contains_subscription( $order ) || $is_request_to_change_payment_method ) ) {
+				$epay_args['subscription'] = 1;
+			}
 
-        /**
-         * Check for epay IPN Response
-         **/
-        public function bambora_online_classic_callback() {
-            $params = stripslashes_deep( $_GET );
-            $message = '';
-            $order = null;
-            $response_code = 400;
-            try {
-                $is_valid_call = Bambora_Online_Classic_Helper::validate_bambora_online_classic_callback_params( $params, $this->md5key, $order, $message );
-                if ( $is_valid_call ) {
-                    $message = $this->process_bambora_online_classic_callback( $order, $params );
-                    $response_code = 200;
-                } else {
-                    if ( ! empty( $order ) ) {
-                        $order->update_status( 'failed', $message );
-                    }
-                    $this->_boclassic_log->separator();
-                    $this->_boclassic_log->add( "Callback failed - {$message} - GET params:" );
-                    $this->_boclassic_log->add( $params );
-                    $this->_boclassic_log->separator();
-                }
-            }
-            catch (Exception $ex) {
-                $message = 'Callback failed Reason: ' . $ex->getMessage();
-                $response_code = 500;
-                $this->_boclassic_log->separator();
-                $this->_boclassic_log->add( "Callback failed - {$message} - GET params:" );
-                $this->_boclassic_log->add( $params );
-                $this->_boclassic_log->separator();
-            }
+			if ( class_exists( 'sitepress' ) ) {
+				$md5_key = Bambora_Online_Classic_Helper::getWPMLOptionValue( 'md5key', Bambora_Online_Classic_Helper::getWPMLOrderLanguage( $order ), $this->md5key );
+			} else {
+				$md5_key = $this->md5key;
+			}
 
-            $header = 'X-EPay-System: ' . Bambora_Online_Classic_Helper::get_module_header_info();
-            header( $header, true, $response_code );
-            die( $message );
+			if ( strlen( $md5_key ) > 0 ) {
+				$hash = '';
+				foreach ( $epay_args as $value ) {
+					$hash .= $value;
+				}
+				$epay_args['hash'] = md5( $hash . $md5_key );
+			}
+			$epay_args      = apply_filters( 'bambora_online_classic_epay_args', $epay_args, $order_id );
+			$epay_args_json = wp_json_encode( $epay_args );
+			$payment_html   = Bambora_Online_Classic_Helper::create_bambora_online_classic_payment_html( $epay_args_json );
 
-        }
+			echo ent2ncr( $payment_html );
+		}
 
-        /**
-         * Process the Bambora Callback
-         *
-         * @param WC_Order $order
-         * @param mixed    $bambora_transaction
-         */
-        protected function process_bambora_online_classic_callback( $order, $params ) {
-            try {
-                $type = '';
-                $bambora_subscription_id = array_key_exists( 'subscriptionid', $params ) ? $params['subscriptionid'] : null;
-                if ( ( Bambora_Online_Classic_Helper::order_contains_subscription( $order ) || Bambora_Online_Classic_Helper::order_is_subscription( $order ) ) && isset( $bambora_subscription_id ) ) {
-                    $action = $this->process_subscription( $order, $params );
-                    $type = "Subscription {$action}";
-                } else {
-                    $action = $this->process_standard_payments( $order, $params );
-                    $type = "Standard Payment {$action}";
-                }
-            }
-            catch ( Exception $e ) {
-                throw $e;
-            }
+		/**
+		 * Removes any special charactors from the order number
+		 *
+		 * @param string $order_number
+		 *
+		 * @return string
+		 */
+		protected function clean_order_number( $order_number ) {
+			return preg_replace( '/[^a-z\d ]/i', "", $order_number );
+		}
 
-            return  "Bambora Online ePay Callback completed - {$type}";
-        }
+		/**
+		 * Check for epay IPN Response
+		 **/
+		public function bambora_online_classic_callback() {
+			$params        = stripslashes_deep( $_GET );
+			$message       = '';
+			$order         = null;
+			$response_code = 400;
+			try {
+				$is_valid_call = Bambora_Online_Classic_Helper::validate_bambora_online_classic_callback_params( $params, $this->md5key, $order, $message );
+				if ( $is_valid_call ) {
+					$message       = $this->process_bambora_online_classic_callback( $order, $params );
+					$response_code = 200;
+				} else {
+					if ( ! empty( $order ) ) {
+						$order->update_status( 'failed', $message );
+					}
+					$this->_boclassic_log->separator();
+					$this->_boclassic_log->add( "Callback failed - {$message} - GET params:" );
+					$this->_boclassic_log->add( $params );
+					$this->_boclassic_log->separator();
+				}
+			} catch ( Exception $ex ) {
+				$message       = 'Callback failed Reason: ' . $ex->getMessage();
+				$response_code = 500;
+				$this->_boclassic_log->separator();
+				$this->_boclassic_log->add( "Callback failed - {$message} - GET params:" );
+				$this->_boclassic_log->add( $params );
+				$this->_boclassic_log->separator();
+			}
 
-        /**
-         * Process standard payments
-         *
-         * @param WC_Order $order
-         * @param array    $params
-         * @return string
-         */
-        protected function process_standard_payments( $order, $params ) {
-            $action = '';
-            $old_transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
-            if ( empty( $old_transaction_id ) ) {
-                $this->add_surcharge_fee_to_order( $order, $params );
-                $order->add_order_note( sprintf( __( 'Bambora Online ePay Payment completed with transaction id %s', 'bambora-online-classic' ), $params['txnid'] ) );
-                $this->add_or_update_payment_type_id_to_order( $order, $params['paymenttype'] );
-                $action = 'created';
-            } else {
-                $action = 'created (Called multiple times)';
-            }
-            $order->payment_complete( $params['txnid'] );
-            return $action;
-        }
+			$header = 'X-EPay-System: ' . Bambora_Online_Classic_Helper::get_module_header_info();
+			header( $header, true, $response_code );
+			die( $message );
 
-        /**
-         * Process the subscription
-         *
-         * @param WC_Order|WC_Subscription $order
-         * @param array                    $params
-         * @return string
-         */
-        protected function process_subscription( $order, $params ) {
-            $action = '';
-            $bambora_subscription_id = $params['subscriptionid'];
-            if ( Bambora_Online_Classic_Helper::order_is_subscription( $order ) ) {
-                // Do not cancel subscription if the callback is called more than once !
-                $old_bambora_subscription_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_subscription_id( $order );
-                if ( $bambora_subscription_id != $old_bambora_subscription_id ) {
-                    $this->subscription_cancellation( $order, true );
-                    $action = 'changed';
-                    $order->add_order_note( sprintf( __( 'Bambora Online ePay Subscription changed from: %s to: %s', 'bambora-online-classic' ), $old_bambora_subscription_id, $bambora_subscription_id ) );
-                    $order->payment_complete();
-                    $this->save_subscription_meta( $order, $bambora_subscription_id, true );
-                } else {
-                    $action = 'changed (Called multiple times)';
-                }
-            } else {
-                // Do not add surcharge if the callback is called more than once!
-                $old_transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
-                $bambora_transaction_id = $params['txnid'];
-                if ( $bambora_transaction_id != $old_transaction_id ) {
-                    $this->add_surcharge_fee_to_order( $order, $params );
-                    $action = 'activated';
-                    $order->add_order_note( sprintf( __( 'Bambora Online ePay Subscription activated with subscription id: %s', 'bambora-online-classic' ), $bambora_subscription_id ) );
-                    $order->payment_complete( $bambora_transaction_id );
-                    $this->save_subscription_meta( $order, $bambora_subscription_id, false );
-                    $this->add_or_update_payment_type_id_to_order( $order, $params['paymenttype'] );
-                    do_action( 'processed_subscription_payments_for_order', $order );
-                } else {
-                    $action = 'activated (Called multiple times)';
-                }
-            }
+		}
 
-            return $action;
-        }
+		/**
+		 * Process the Bambora Callback
+		 *
+		 * @param WC_Order $order
+		 * @param mixed $bambora_transaction
+		 */
+		protected function process_bambora_online_classic_callback( $order, $params ) {
+			try {
+				$type                    = '';
+				$bambora_subscription_id = array_key_exists( 'subscriptionid', $params ) ? $params['subscriptionid'] : null;
+				if ( ( Bambora_Online_Classic_Helper::order_contains_subscription( $order ) || Bambora_Online_Classic_Helper::order_is_subscription( $order ) ) && isset( $bambora_subscription_id ) ) {
+					$action = $this->process_subscription( $order, $params );
+					$type   = "Subscription {$action}";
+				} else {
+					$action = $this->process_standard_payments( $order, $params );
+					$type   = "Standard Payment {$action}";
+				}
+			} catch ( Exception $e ) {
+				throw $e;
+			}
 
-        /**
-         * Add surcharge to order
-         *
-         * @param WC_Order $order
-         * @param array    $params
-         */
-        protected function add_surcharge_fee_to_order( $order, $params ) {
-            $order_currency = $order->get_currency();
-            $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $order_currency );
-            $fee_amount_in_minorunits = $params['txnfee'];
-            if ( $fee_amount_in_minorunits > 0 && $this->addfeetoorder === 'yes' ) {
-                $fee_amount = Bambora_Online_Classic_Helper::convert_price_from_minorunits( $fee_amount_in_minorunits, $minorunits );
-                $fee = (object) array(
-                    'name'          => __( 'Surcharge Fee', 'bambora-online-classic' ),
-                    'amount'        => $fee_amount,
-                    'taxable'       => false,
-                    'tax_class'     => null,
-                    'tax_data'      => array(),
-                    'tax'           => 0,
-                    );
-				$fee_item = new WC_Order_Item_Fee();
+			return "Bambora Online ePay Callback completed - {$type}";
+		}
+
+		/**
+		 * Process standard payments
+		 *
+		 * @param WC_Order $order
+		 * @param array $params
+		 *
+		 * @return string
+		 */
+		protected function process_standard_payments( $order, $params ) {
+			$action             = '';
+			$old_transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
+			if ( empty( $old_transaction_id ) ) {
+				$this->add_surcharge_fee_to_order( $order, $params );
+				$order->add_order_note( sprintf( __( 'Bambora Online ePay Payment completed with transaction id %s', 'bambora-online-classic' ), $params['txnid'] ) );
+				$this->add_or_update_payment_type_id_to_order( $order, $params['paymenttype'] );
+				$action = 'created';
+			} else {
+				$action = 'created (Called multiple times)';
+			}
+			$order->payment_complete( $params['txnid'] );
+
+			return $action;
+		}
+
+		/**
+		 * Process the subscription
+		 *
+		 * @param WC_Order|WC_Subscription $order
+		 * @param array $params
+		 *
+		 * @return string
+		 */
+		protected function process_subscription( $order, $params ) {
+			$action                  = '';
+			$bambora_subscription_id = $params['subscriptionid'];
+			if ( Bambora_Online_Classic_Helper::order_is_subscription( $order ) ) {
+				// Do not cancel subscription if the callback is called more than once !
+				$old_bambora_subscription_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_subscription_id( $order );
+				if ( $bambora_subscription_id != $old_bambora_subscription_id ) {
+					$this->subscription_cancellation( $order, true );
+					$action = 'changed';
+					$order->add_order_note( sprintf( __( 'Bambora Online ePay Subscription changed from: %s to: %s', 'bambora-online-classic' ), $old_bambora_subscription_id, $bambora_subscription_id ) );
+					$order->payment_complete();
+					$this->save_subscription_meta( $order, $bambora_subscription_id, true );
+				} else {
+					$action = 'changed (Called multiple times)';
+				}
+			} else {
+				// Do not add surcharge if the callback is called more than once!
+				$old_transaction_id     = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
+				$bambora_transaction_id = $params['txnid'];
+				if ( $bambora_transaction_id != $old_transaction_id ) {
+					$this->add_surcharge_fee_to_order( $order, $params );
+					$action = 'activated';
+					$order->add_order_note( sprintf( __( 'Bambora Online ePay Subscription activated with subscription id: %s', 'bambora-online-classic' ), $bambora_subscription_id ) );
+					$order->payment_complete( $bambora_transaction_id );
+					$this->save_subscription_meta( $order, $bambora_subscription_id, false );
+					$this->add_or_update_payment_type_id_to_order( $order, $params['paymenttype'] );
+					do_action( 'processed_subscription_payments_for_order', $order );
+				} else {
+					$action = 'activated (Called multiple times)';
+				}
+			}
+
+			return $action;
+		}
+
+		/**
+		 * Add surcharge to order
+		 *
+		 * @param WC_Order $order
+		 * @param array $params
+		 */
+		protected function add_surcharge_fee_to_order( $order, $params ) {
+			$order_currency           = $order->get_currency();
+			$minorunits               = Bambora_Online_Classic_Helper::get_currency_minorunits( $order_currency );
+			$fee_amount_in_minorunits = $params['txnfee'];
+			if ( $fee_amount_in_minorunits > 0 && $this->addfeetoorder === 'yes' ) {
+				$fee_amount = Bambora_Online_Classic_Helper::convert_price_from_minorunits( $fee_amount_in_minorunits, $minorunits );
+				$fee        = (object) array(
+					'name'      => __( 'Surcharge Fee', 'bambora-online-classic' ),
+					'amount'    => $fee_amount,
+					'taxable'   => false,
+					'tax_class' => null,
+					'tax_data'  => array(),
+					'tax'       => 0,
+				);
+				$fee_item   = new WC_Order_Item_Fee();
 				$fee_item->set_props( array(
-                        'name' => $fee->name,
-                        'tax_class' => $fee->tax_class,
-                        'total' => $fee->amount,
-                        'total_tax' => $fee->tax,
-                        'order_id' => $order->get_id(),
-                        )
-                    );
+						'name'      => $fee->name,
+						'tax_class' => $fee->tax_class,
+						'total'     => $fee->amount,
+						'total_tax' => $fee->tax,
+						'order_id'  => $order->get_id(),
+					)
+				);
 				$fee_item->save();
 				$order->add_item( $fee_item );
-                $total_incl_fee = $order->get_total() + $fee_amount;
-                $order->set_total( $total_incl_fee );
-            }
-        }
+				$total_incl_fee = $order->get_total() + $fee_amount;
+				$order->set_total( $total_incl_fee );
+			}
+		}
 
-        /**
-         * Add Payment Type id Meta to the order
-         * @param WC_Order $order
-         * @param mixed $payment_type_id
-         * @return void
-         */
-        protected function add_or_update_payment_type_id_to_order( $order, $payment_type_id) {
-            $order_id = $order->get_id();
-            $existing_payment_type_id = get_post_meta($order_id, Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_PAYMENT_TYPE_ID, true);
+		/**
+		 * Add Payment Type id Meta to the order
+		 *
+		 * @param WC_Order $order
+		 * @param mixed $payment_type_id
+		 *
+		 * @return void
+		 */
+		protected function add_or_update_payment_type_id_to_order( $order, $payment_type_id ) {
+			$existing_payment_type_id = $order->get_meta( Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_PAYMENT_TYPE_ID, true );
+			if ( ! isset( $existing_payment_type_id ) || $existing_payment_type_id !== $payment_type_id ) {
+				$order->update_meta_data( Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_PAYMENT_TYPE_ID, $payment_type_id );
+				$order->save();
+			}
+		}
 
-            if(!isset($existing_payment_type_id) || $existing_payment_type_id !== $payment_type_id) {
-                update_post_meta( $order_id, Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_PAYMENT_TYPE_ID, $payment_type_id );
-            }
-        }
+		/**
+		 * Store the Bambora Online Classic subscription id on subscriptions in the order.
+		 *
+		 * @param WC_Order $order_id
+		 * @param string $bambora_subscription_id
+		 * @param bool $is_subscription
+		 */
+		protected function save_subscription_meta( $order, $bambora_subscription_id, $is_subscription ) {
+			$bambora_subscription_id = wc_clean( $bambora_subscription_id );
+			$order_id                = $order->get_id();
+			if ( $is_subscription ) {
+				$order->update_meta_data( Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID, $bambora_subscription_id );
+				$order->save();
+			} else {
+				// Also store it on the subscriptions being purchased in the order
+				$subscriptions = Bambora_Online_Classic_Helper::get_subscriptions_for_order( $order_id );
+				foreach ( $subscriptions as $subscription ) {
+					$subscription->update_meta_data( Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID, $bambora_subscription_id );
+					$subscription->add_order_note( sprintf( __( 'Bambora Online ePay Subscription activated with subscription id: %s by order %s', 'bambora-online-classic' ), $bambora_subscription_id, $order_id ) );
+					$subscription->save();
+				}
+			}
+		}
 
-        /**
-         * Store the Bambora Online Classic subscription id on subscriptions in the order.
-         *
-         * @param WC_Order $order_id
-         * @param string   $bambora_subscription_id
-         * @param bool     $is_subscription
-         */
-        protected function save_subscription_meta( $order, $bambora_subscription_id, $is_subscription ) {
-            $bambora_subscription_id = wc_clean( $bambora_subscription_id );
-            $order_id = $order->get_id();
-            if ( $is_subscription ) {
-                update_post_meta( $order_id, Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID, $bambora_subscription_id );
-            } else {
-                // Also store it on the subscriptions being purchased in the order
-                $subscriptions = Bambora_Online_Classic_Helper::get_subscriptions_for_order( $order_id );
-                foreach ( $subscriptions as $subscription ) {
-                    $wc_subscription_id = $subscription->get_id();
-                    update_post_meta( $wc_subscription_id, Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID, $bambora_subscription_id );
-                    $subscription->add_order_note( sprintf( __( 'Bambora Online ePay Subscription activated with subscription id: %s by order %s', 'bambora-online-classic' ), $bambora_subscription_id, $order_id ) );
-                }
-            }
-        }
+		/**
+		 * Handle Bambora Online Classic Actions
+		 */
+		public function bambora_online_classic_actions() {
+			if ( isset( $_GET['boclassicaction'] ) && isset( $_GET['boclassicnonce'] ) && wp_verify_nonce( $_GET['boclassicnonce'], 'boclassic_process_payment_action' ) ) {
+				$params   = $_GET;
+				$result   = $this->process_bambora_online_classic_action( $params );
+				$action   = $params['boclassicaction'];
+				$order_id = $params['post'] ?? $params['id'];
 
-        /**
-         * Handle Bambora Online Classic Actions
-         */
-        public function bambora_online_classic_actions() {
-            if ( isset( $_GET['boclassicaction'] ) && isset( $_GET['boclassicnonce'] ) && wp_verify_nonce( $_GET['boclassicnonce'], 'boclassic_process_payment_action' ) ) {
-                $params = $_GET;
-                $result = $this->process_bambora_online_classic_action( $params );
-                $action = $params['boclassicaction'];
-                $order_id = isset( $params['post'] ) ?  $params['post'] : '-1';
-                if ( is_wp_error( $result ) ) {
-                    $message = $result->get_error_message( 'bambora_online_classic_error' );
-                    $this->_boclassic_log->add( $message );
-                    Bambora_Online_Classic_Helper::add_admin_notices(Bambora_Online_Classic_Helper::ERROR, $message);
-                } else {
-                    global $post;
-                    $message = sprintf( __( 'The %s action was a success for order %s', 'bambora-online-classic' ), $action, $order_id );
-                    Bambora_Online_Classic_Helper::add_admin_notices(Bambora_Online_Classic_Helper::SUCCESS, $message, true);
-                    $url = admin_url( 'post.php?post=' . $post->ID . '&action=edit' );
-                    wp_safe_redirect( $url );
-                }
-            }
-        }
+				if ( is_wp_error( $result ) ) {
+					$message = $result->get_error_message( 'bambora_online_classic_error' );
+					$this->_boclassic_log->add( $message );
+					Bambora_Online_Classic_Helper::add_admin_notices( Bambora_Online_Classic_Helper::ERROR, $message );
+				} else {
+					global $post;
+					$message = sprintf( __( 'The %s action was a success for order %s', 'bambora-online-classic' ), $action, $order_id );
+					Bambora_Online_Classic_Helper::add_admin_notices( Bambora_Online_Classic_Helper::SUCCESS, $message, true );
+					if ( ! isset( $post ) ) {
+						$url = admin_url( 'admin.php?page=wc-orders&action=edit&id=' . $order_id );
+					} else {
+						$url = admin_url( 'post.php?post=' . $order_id . '&action=edit' );
+					}
+					wp_safe_redirect( $url );
+				}
+			}
+		}
 
-        /**
-         * Validate Action params
-         *
-         * @param array  $get_params
-         * @param string $failed_message
-         * @return bool
-         */
-        protected function validate_bambora_online_classic_action( $get_params, &$failed_message ) {
-            $required_params = array(
-                'boclassicaction',
-                'post',
-                'currency',
-                'amount',
-            );
-            foreach ( $required_params as $required_param ) {
-                if ( ! array_key_exists( $required_param, $get_params ) || empty( $get_params[ $required_param ] ) ) {
-                    $failed_message = $required_param;
-                    return false;
-                }
-            }
-            return true;
-        }
+		/**
+		 * Validate Action params
+		 *
+		 * @param array $get_params
+		 * @param string $failed_message
+		 *
+		 * @return bool
+		 */
+		protected function validate_bambora_online_classic_action( $get_params, &$failed_message ) {
+			$required_params = array(
+				'boclassicaction',
+				'currency',
+				'amount',
+			);
+			foreach ( $required_params as $required_param ) {
+				if ( ! array_key_exists( $required_param, $get_params ) || empty( $get_params[ $required_param ] ) ) {
+					$failed_message = $required_param;
 
-        /**
-         * Process the action
-         *
-         * @param array $params
-         * @return bool|WP_Error
-         */
-        protected function process_bambora_online_classic_action( $params ) {
-            $failed_message = '';
-            if ( ! $this->validate_bambora_online_classic_action( $params, $failed_message ) ) {
-                return new WP_Error( 'bambora_online_classic_error', sprintf( __( 'The following get parameter was not provided "%s"' ), $failed_message ) );
-            }
+					return false;
+				}
+			}
 
-            try {
-                $order_id = $params['post'];
-                $currency = $params['currency'];
-                $action = $params['boclassicaction'];
-                $amount = $params['amount'];
+			return true;
+		}
 
-                switch ( $action ) {
-                    case 'capture':
-                        $capture_result = $this->bambora_online_classic_capture_payment($order_id, $amount, $currency);
-                        return $capture_result;
-                    case 'refund':
-                        $refund_result = $this->bambora_online_classic_refund_payment($order_id, $amount, $currency);
-                        return $refund_result;
-                    case 'delete':
-                        $delete_result = $this->bambora_online_classic_delete_payment($order_id);
-                        return $delete_result;
-                }
-            }
-            catch (Exception $ex) {
-                return new WP_Error( 'bambora_online_classic_error', $ex->getMessage() );
-            }
-            return true;
-        }
+		/**
+		 * Process the action
+		 *
+		 * @param array $params
+		 *
+		 * @return bool|WP_Error
+		 */
+		protected function process_bambora_online_classic_action( $params ) {
+			$failed_message = '';
+			if ( ! $this->validate_bambora_online_classic_action( $params, $failed_message ) ) {
+				return new WP_Error( 'bambora_online_classic_error', sprintf( __( 'The following get parameter was not provided "%s"' ), $failed_message ) );
+			}
 
+			try {
+				$order_id = $params['post'] ?? $params['id'];
+				if ( $order_id == null ) {
+					return new WP_Error( 'bambora_online_classic_error', __( 'Both id and post were null' ) );
+				}
+				$currency = $params['currency'];
+				$action   = $params['boclassicaction'];
+				$amount   = $params['amount'];
 
+				switch ( $action ) {
+					case 'capture':
+						$capture_result = $this->bambora_online_classic_capture_payment( $order_id, $amount, $currency );
 
-        /**
-         * Capture a payment
-         *
-         * @param mixed $order_id
-         * @param mixed $amount
-         * @param mixed $currency
-         * @return bool|WP_Error
-         */
-        public function bambora_online_classic_capture_payment($order_id, $amount, $currency) {
+						return $capture_result;
+					case 'refund':
+						$refund_result = $this->bambora_online_classic_refund_payment( $order_id, $amount, $currency );
 
-            $order = wc_get_order( $order_id );
-            if( empty( $currency ) ) {
-                $currency = $order->get_currency();
-            }
-            $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $currency );
-            $amount = str_replace( ',', '.', $amount );
-            $amount_in_minorunits = Bambora_Online_Classic_Helper::convert_price_to_minorunits( $amount, $minorunits, $this->roundingmode );
-            $transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
+						return $refund_result;
+					case 'delete':
+						$delete_result = $this->bambora_online_classic_delete_payment( $order_id );
 
-	        if ( class_exists( 'sitepress' ) ) {
-		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
-		        $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword", $this->remotepassword );
-	        } else {
-		        $merchant_number = $this->merchant;
-		        $remote_password = $this->remotepassword;
-	        }
+						return $delete_result;
+				}
+			} catch ( Exception $ex ) {
+				return new WP_Error( 'bambora_online_classic_error', $ex->getMessage() );
+			}
+
+			return true;
+		}
 
 
+		/**
+		 * Capture a payment
+		 *
+		 * @param mixed $order_id
+		 * @param mixed $amount
+		 * @param mixed $currency
+		 *
+		 * @return bool|WP_Error
+		 */
+		public function bambora_online_classic_capture_payment( $order_id, $amount, $currency ) {
 
-            $webservice = new Bambora_Online_Classic_Soap( $remote_password );
-            $capture_response = $webservice->capture( $merchant_number, $transaction_id, $amount_in_minorunits );
-            if ( $capture_response->captureResult === true ) {
-                do_action( 'bambora_online_classic_after_capture', $order_id );
-                return true;
-            } else {
-                $message = sprintf( __( 'Capture action failed for order %s', 'bambora-online-classic' ), $order_id );
-                if ( $capture_response->epayresponse != '-1' ) {
-                    $message .= ' - ' . $webservice->get_epay_error($merchant_number, $capture_response->epayresponse );
-                } elseif ( $capture_response->pbsResponse != '-1' ) {
-                    $message .= ' - ' . $webservice->get_pbs_error($merchant_number, $capture_response->pbsResponse );
-                }
-                $this->_boclassic_log->add( $message );
-                return new WP_Error( 'bambora_online_classic_error', $message );
-            }
-        }
+			$order = wc_get_order( $order_id );
+			if ( empty( $currency ) ) {
+				$currency = $order->get_currency();
+			}
+			$minorunits           = Bambora_Online_Classic_Helper::get_currency_minorunits( $currency );
+			$amount               = str_replace( ',', '.', $amount );
+			$amount_in_minorunits = Bambora_Online_Classic_Helper::convert_price_to_minorunits( $amount, $minorunits, $this->roundingmode );
+			$transaction_id       = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
 
-        /**
-         * Refund a payment
-         *
-         * @param mixed $order_id
-         * @param mixed $amount
-         * @param mixed $currency
-         * @return bool|WP_Error
-         */
-        public function bambora_online_classic_refund_payment( $order_id, $amount, $currency ) {
+			if ( class_exists( 'sitepress' ) ) {
+				$merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
+				$remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword", $this->remotepassword );
+			} else {
+				$merchant_number = $this->merchant;
+				$remote_password = $this->remotepassword;
+			}
 
-            $order = wc_get_order( $order_id );
+			$webservice       = new Bambora_Online_Classic_Soap( $remote_password );
+			$capture_response = $webservice->capture( $merchant_number, $transaction_id, $amount_in_minorunits );
+			if ( $capture_response->captureResult === true ) {
+				do_action( 'bambora_online_classic_after_capture', $order_id );
 
-            if( empty( $currency ) ) {
-                $currency = $order->get_currency();
-            }
+				return true;
+			} else {
+				$message = sprintf( __( 'Capture action failed for order %s', 'bambora-online-classic' ), $order_id );
+				if ( $capture_response->epayresponse != '-1' ) {
+					$message .= ' - ' . $webservice->get_epay_error( $merchant_number, $capture_response->epayresponse );
+				} elseif ( $capture_response->pbsResponse != '-1' ) {
+					$message .= ' - ' . $webservice->get_pbs_error( $merchant_number, $capture_response->pbsResponse );
+				}
+				$this->_boclassic_log->add( $message );
 
-            $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $currency );
-            $amount = str_replace( ',', '.', $amount );
-            $amount_in_minorunits = Bambora_Online_Classic_Helper::convert_price_to_minorunits( $amount, $minorunits, $this->roundingmode );
-            $transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
+				return new WP_Error( 'bambora_online_classic_error', $message );
+			}
+		}
 
-	        if ( class_exists( 'sitepress' ) ) {
-		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
-		        $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword", $this->remotepassword );
-	        } else {
-		        $merchant_number = $this->merchant;
-		        $remote_password = $this->remotepassword;
-	        }
+		/**
+		 * Refund a payment
+		 *
+		 * @param mixed $order_id
+		 * @param mixed $amount
+		 * @param mixed $currency
+		 *
+		 * @return bool|WP_Error
+		 */
+		public function bambora_online_classic_refund_payment( $order_id, $amount, $currency ) {
 
+			$order = wc_get_order( $order_id );
 
-            $webservice = new Bambora_Online_Classic_Soap( $remote_password );
-            $refund_response = $webservice->refund($merchant_number, $transaction_id, $amount_in_minorunits );
-            if ( $refund_response->creditResult === true ) {
-                do_action( 'bambora_online_classic_after_refund', $order_id );
-                return true;
-            } else {
-                $message = sprintf( __( 'Refund action failed for order %s', 'bambora-online-classic' ), $order_id );
-                if ( $refund_response->epayresponse != '-1' ) {
-                    $message .= ' - ' . $webservice->get_epay_error( $merchant_number, $refund_response->epayresponse );
-                } elseif ( $refund_response->pbsResponse != '-1' ) {
-                    $message .= ' - ' . $webservice->get_pbs_error( $merchant_number, $refund_response->pbsResponse );
-                }
-                $this->_boclassic_log->add( $message );
-                return new WP_Error( 'bambora_online_classic_error', $message );
-            }
-        }
+			if ( empty( $currency ) ) {
+				$currency = $order->get_currency();
+			}
 
-        /**
-         * Delete a payment
-         *
-         * @param mixed $order_id
-         * @return bool|WP_Error
-         */
-        public function bambora_online_classic_delete_payment( $order_id ) {
-            $order = wc_get_order( $order_id );
-            $transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
+			$minorunits           = Bambora_Online_Classic_Helper::get_currency_minorunits( $currency );
+			$amount               = str_replace( ',', '.', $amount );
+			$amount_in_minorunits = Bambora_Online_Classic_Helper::convert_price_to_minorunits( $amount, $minorunits, $this->roundingmode );
+			$transaction_id       = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
 
-	        if ( class_exists( 'sitepress' ) ) {
-		        $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
-		        $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword", $this->remotepassword );
-	        } else {
-		        $merchant_number = $this->merchant;
-		        $remote_password = $this->remotepassword;
-	        }
+			if ( class_exists( 'sitepress' ) ) {
+				$merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
+				$remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword", $this->remotepassword );
+			} else {
+				$merchant_number = $this->merchant;
+				$remote_password = $this->remotepassword;
+			}
 
-	        $webservice      = new Bambora_Online_Classic_Soap( $remote_password );
-	        $delete_response = $webservice->delete( $merchant_number, $transaction_id );
-            if ( $delete_response->deleteResult === true ) {
-                do_action( 'bambora_online_classic_after_delete', $order_id );
-                return true;
-            } else {
-                $message = sprintf( __( 'Delete action failed for order %s', 'bambora-online-classic' ), $order_id );
-                if ( $delete_response->epayresponse != '-1' ) {
-                    $message .= ' - ' . $webservice->get_epay_error( $merchant_number, $delete_response->epayresponse );
-                }
-                $this->_boclassic_log->add( $message );
-                return new WP_Error( 'bambora_online_classic_error', $message );
-            }
-        }
-	    /**
-	     * Add subscripts payment meta, to allow for subscripts import to map tokens, and for admins to manually set a subscription token
-	     *
-	     * @Link https://github.com/woocommerce/woocommerce-subscriptions-importer-exporter#importing-payment-gateway-meta-data
-	     */
-	    public function add_subscription_payment_meta( $payment_meta, $subscription ) {
-		    $payment_meta[ $this->id ] = array(
-			    'post_meta' => array(
-				    Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID => array(
-					    'value' => Bambora_Online_Classic_Helper::get_bambora_online_classic_subscription_id( $subscription),
-					    'label' => __('Bambora subscription token', 'bambora-online-classic'),
-					    'disabled' => false,
-				    ),
-			    ),
-		    );
-		    return $payment_meta;
-	    }
+			$webservice      = new Bambora_Online_Classic_Soap( $remote_password );
+			$refund_response = $webservice->refund( $merchant_number, $transaction_id, $amount_in_minorunits );
+			if ( $refund_response->creditResult === true ) {
+				do_action( 'bambora_online_classic_after_refund', $order_id );
 
-        /**
-         * Add Bambora Online Classic Meta boxes
-         */
-        public function bambora_online_classic_meta_boxes() {
-            global $post;
-            $order_id = $post->ID;
-            if( !$this->module_check( $order_id ) ) {
-                return;
-            }
+				return true;
+			} else {
+				$message = sprintf( __( 'Refund action failed for order %s', 'bambora-online-classic' ), $order_id );
+				if ( $refund_response->epayresponse != '-1' ) {
+					$message .= ' - ' . $webservice->get_epay_error( $merchant_number, $refund_response->epayresponse );
+				} elseif ( $refund_response->pbsResponse != '-1' ) {
+					$message .= ' - ' . $webservice->get_pbs_error( $merchant_number, $refund_response->pbsResponse );
+				}
+				$this->_boclassic_log->add( $message );
 
-            add_meta_box(
-                'epay-payment-actions',
-                'Bambora Online ePay',
-                array( &$this, 'bambora_online_classic_meta_box_payment' ),
-                'shop_order',
-                'side',
-                'high'
-            );
-        }
+				return new WP_Error( 'bambora_online_classic_error', $message );
+			}
+		}
 
-        /**
-         * Create the Bambora Online Classic Meta Box
-         */
-        public function bambora_online_classic_meta_box_payment() {
-            global $post;
-            $html = '';
-            try {
-                $order_id = $post->ID;
-                $order = wc_get_order( $order_id );
-                if ( ! empty( $order ) ) {
-                    $transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
-                    if ( strlen( $transaction_id ) > 0 ) {
-                        $html = $this->bambora_online_classic_meta_box_payment_html( $order, $transaction_id );
-                    } else {
-                        $html = sprintf( __( 'No transaction was found for order %s', 'bambora-online-classic' ), $order_id );
-                        $this->_boclassic_log->add( $html );
-                    }
-                } else {
-                    $html = sprintf( __( 'The order with id %s could not be loaded', 'bambora-online-classic' ), $order_id );
-                    $this->_boclassic_log->add( $html );
-                }
-            }
-            catch ( Exception $ex ) {
-                $html = $ex->getMessage();
-                $this->_boclassic_log->add( $html );
-            }
-            echo ent2ncr( $html );
-        }
+		/**
+		 * Delete a payment
+		 *
+		 * @param mixed $order_id
+		 *
+		 * @return bool|WP_Error
+		 */
+		public function bambora_online_classic_delete_payment( $order_id ) {
+			$order          = wc_get_order( $order_id );
+			$transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
 
-        /**
-         * Create the HTML for the Bambora Online Classic Meta box payment field
-         *
-         * @param WC_Order $order
-         * @param string   $transaction_id
-         * @return string
-         */
-        protected function bambora_online_classic_meta_box_payment_html( $order, $transaction_id ) {
-            try {
-                $html = '';
-	            if ( class_exists( 'sitepress' ) ) {
-		            $merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
-		            $remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword", $this->remotepassword );
-	            } else {
-		            $merchant_number = $this->merchant;
-		            $remote_password = $this->remotepassword;
-	            }
+			if ( class_exists( 'sitepress' ) ) {
+				$merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
+				$remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword", $this->remotepassword );
+			} else {
+				$merchant_number = $this->merchant;
+				$remote_password = $this->remotepassword;
+			}
 
-                $webservice = new Bambora_Online_Classic_Soap( $remote_password);
-                $get_transaction_response = $webservice->get_transaction( $merchant_number, $transaction_id );
-                if ( $get_transaction_response->gettransactionResult === false ) {
-                    $html = __( 'Get Transaction action failed', 'bambora-online-classic' );
-                    if ( $get_transaction_response->epayresponse != '-1' ) {
-                        $html .= ' - ' . $webservice->get_epay_error( $merchant_number, $get_transaction_response->epayresponse );
-                    }
-                    return $html;
-                }
-                $transaction = $get_transaction_response->transactionInformation;
-                $currency_code = $transaction->currency;
-                $currency = Bambora_Online_Classic_Helper::get_iso_code( $currency_code, false );
-                $minorunits = Bambora_Online_Classic_Helper::get_currency_minorunits( $currency );
+			$webservice      = new Bambora_Online_Classic_Soap( $remote_password );
+			$delete_response = $webservice->delete( $merchant_number, $transaction_id );
+			if ( $delete_response->deleteResult === true ) {
+				do_action( 'bambora_online_classic_after_delete', $order_id );
 
-                $total_authorized = Bambora_Online_Classic_Helper::convert_price_from_minorunits( $transaction->authamount, $minorunits );
-                $total_captured = Bambora_Online_Classic_Helper::convert_price_from_minorunits( $transaction->capturedamount, $minorunits );
-                $total_credited = Bambora_Online_Classic_Helper::convert_price_from_minorunits( $transaction->creditedamount, $minorunits );
-                $available_for_capture = $total_authorized - $total_captured;
-                $transaction_status = $transaction->status;
+				return true;
+			} else {
+				$message = sprintf( __( 'Delete action failed for order %s', 'bambora-online-classic' ), $order_id );
+				if ( $delete_response->epayresponse != '-1' ) {
+					$message .= ' - ' . $webservice->get_epay_error( $merchant_number, $delete_response->epayresponse );
+				}
+				$this->_boclassic_log->add( $message );
 
-                $card_info = Bambora_Online_Classic_Helper::get_cardtype_groupid_and_name($transaction->cardtypeid);
-                $card_group_id = $card_info[1];
-                $card_name = $card_info[0];
+				return new WP_Error( 'bambora_online_classic_error', $message );
+			}
+		}
 
-                if(isset($card_group_id) && $card_group_id != '-1') {
-                    $this->add_or_update_payment_type_id_to_order( $order, $card_group_id );
-                }
+		/**
+		 * Add subscripts payment meta, to allow for subscripts import to map tokens, and for admins to manually set a subscription token
+		 *
+		 * @Link https://github.com/woocommerce/woocommerce-subscriptions-importer-exporter#importing-payment-gateway-meta-data
+		 */
+		public function add_subscription_payment_meta( $payment_meta, $subscription ) {
+			$payment_meta[ $this->id ] = array(
+				'post_meta' => array(
+					Bambora_Online_Classic_Helper::BAMBORA_ONLINE_CLASSIC_SUBSCRIPTION_ID => array(
+						'value'    => Bambora_Online_Classic_Helper::get_bambora_online_classic_subscription_id( $subscription ),
+						'label'    => __( 'Bambora subscription token', 'bambora-online-classic' ),
+						'disabled' => false,
+					),
+				),
+			);
 
-	            $user = wp_get_current_user();
-	            if ( in_array( $this->rolecapturerefunddelete, (array) $user->roles )  || in_array( 'administrator', (array) $user->roles )  ) {
-		            //The user has the role required for  "Capture, Refund, Delete"  and can perform those actions.
-		            $canCaptureRefundDelete = true;
-	            }else{
-		            //The user can only view the data.
-		            $canCaptureRefundDelete = false;
-	            }
+			return $payment_meta;
+		}
 
-                $html = '<div class="boclassic-info">';
-                if(isset($card_group_id) && $card_group_id != '-1') {
-                    $html .= '<img class="boclassic-paymenttype-img" src="https://d25dqh6gpkyuw6.cloudfront.net/paymentlogos/external/' . $card_group_id . '.png" alt="' . $card_name . '" title="' . $card_name . '" />';
-                }
-                $html .= '<div class="boclassic-transactionid">';
-                $html .= '<p>' . __( 'Transaction ID', 'bambora-online-classic' ) . '</p>';
-                $html .= '<p>' . $transaction->transactionid . '</p>';
-                $html .= '</div>';
-                $html .= '<div class="boclassic-paymenttype">';
-                $html .= '<p>' . __( 'Payment Type', 'bambora-online-classic' ) . '</p>';
-                $html .= '<p>' . $card_name . '</p>';
-                $html .= '</div>';
+		/**
+		 * Add Bambora Online Classic Meta boxes
+		 */
+		public function bambora_online_classic_meta_boxes() {
+			global $post;
+			if ( ! isset( $post ) ) { //HPOS might be used
+				$order    = wc_get_order();
+				$order_id = $order->get_id();
+			} else {
+				$order_id = $post->ID;
+				$order    = wc_get_order( $order_id );
+			}
+			if ( ! $order ) {
+				return;
+			}
 
-                $html .= '<div class="boclassic-info-overview">';
-                $html .= '<p>' . __( 'Authorized:', 'bambora-online-classic' ) . '</p>';
-                $html .= '<p>' . wc_format_localized_price( $total_authorized ) . ' ' . $currency . '</p>';
-                $html .= '</div>';
-                $html .= '<div class="boclassic-info-overview">';
-                $html .= '<p>' . __( 'Captured:', 'bambora-online-classic' ) . '</p>';
-                $html .= '<p>' . wc_format_localized_price( $total_captured ) . ' ' . $currency . '</p>';
-                $html .= '</div>';
-                $html .= '<div class="boclassic-info-overview">';
-                $html .= '<p>' . __( 'Refunded:', 'bambora-online-classic' ) . '</p>';
-                $html .= '<p>' . wc_format_localized_price( $total_credited ) . ' ' . $currency . '</p>';
-                $html .= '</div>';
-                $html .= '</div>';
+			if ( ! $this->module_check( $order_id ) ) {
+				return;
+			}
 
-                if ( $transaction_status === 'PAYMENT_NEW' || ( $transaction_status === 'PAYMENT_CAPTURED' && $total_credited === 0 ) ) {
-                    $html .= '<div class="boclassic-action-container">';
-                    $html .= '<input type="hidden" id="boclassic-currency" name="boclassic-currency" value="' . $currency . '">';
-                    wp_nonce_field( 'boclassic_process_payment_action', 'boclassicnonce' );
-                    if ( $transaction_status === 'PAYMENT_NEW' ) {
-                        $html .= '<input type="hidden" id="boclassic-capture-message" name="boclassic-capture-message" value="' . __( 'Are you sure you want to capture the payment?', 'bambora-online-classic' ) . '" />';
-                        $html .= '<div class="boclassic-action">';
+			add_meta_box(
+				'epay-payment-actions',
+				'Bambora Online ePay',
+				array( &$this, 'bambora_online_classic_meta_box_payment' ),
+				'shop_order',
+				'side',
+				'high'
+			);
+			add_meta_box(
+				'epay-payment-actions',
+				'Bambora Online ePay',
+				array( &$this, 'bambora_online_classic_meta_box_payment' ),
+				'woocommerce_page_wc-orders',
+				'side',
+				'high'
+			);
 
-	                    if ($canCaptureRefundDelete) {
-		                    $html .= '<p>' . $currency . '</p>';
-		                    $html .= '<input type="text" value="' . $available_for_capture . '" id="boclassic-capture-amount" class="boclassic-amount" name="boclassic-amount" />';
-		                    $html .= '<input id="boclassic-capture-submit" class="button capture" name="boclassic-capture" type="submit" value="' . __( 'Capture', 'bambora-online-classic' ) . '" />';
-	                    }else{
-		                    $html .= __( 'Your role cannot capture or delete the payment', 'bambora-online-classic' );
-	                    }
-	                    $html .= '</div>';
-                        $html .= '<br />';
-                        if ( $total_captured === 0 ) {
-                            $html .= '<input type="hidden" id="boclassic-delete-message" name="boclassic-delete-message" value="' . __( 'Are you sure you want to delete the payment?', 'bambora-online-classic' ) . '" />';
-                            $html .= '<div class="boclassic-action">';
-	                        if ($canCaptureRefundDelete){
-                                $html .= '<input id="boclassic-delete-submit" class="button delete" name="boclassic-delete" type="submit" value="' . __( 'Delete', 'bambora-online-classic' ) . '" />';
-	                        }
-                            $html .= '</div>';
-                        }
-                    } elseif ( $transaction_status === 'PAYMENT_CAPTURED' && $total_credited === 0 ) {
-                        $html .= '<input type="hidden" id="boclassic-refund-message" name="boclassic-refund-message" value="' . __( 'Are you sure you want to refund the payment?', 'bambora-online-classic' ) . '" />';
-                        $html .= '<div class="boclassic-action">';
-                        $html .= '<p>' . $currency . '</p>';
-                        $html .= '<input type="text" value="' . $total_captured . '" id="boclassic-refund-amount" class="boclassic-amount" name="boclassic-amount" />';
-	                    if ($canCaptureRefundDelete){
-                             $html .= '<input id="boclassic-refund-submit" class="button refund" name="boclassic-refund" type="submit" value="' . __( 'Refund', 'bambora-online-classic' ) . '" />';
-	                    }
-                        $html .= '</div>';
-                        $html .= '<br />';
-                    }
-                    $html .= '</div>';
-                    $warning_message = __( 'The amount you entered was in the wrong format.', 'bambora-online-classic' );
+		}
 
-                    $html .= '<div id="boclassic-format-error" class="boclassic boclassic-error"><strong>' . __( 'Warning', 'bambora-online-classic' ) . ' </strong>' . $warning_message . '<br /><strong>' . __( 'Correct format is: 1234.56', 'bambora-online-classic' ) . '</strong></div>';
+		/**
+		 * Create the Bambora Online Classic Meta Box
+		 */
+		public function bambora_online_classic_meta_box_payment() {
+			global $post;
+			$html = '';
+			try {
+				if ( ! isset( $post ) ) { //HPOS might be used
+					$order    = wc_get_order();
+					$order_id = $order->get_id();
+				} else {
+					$order_id = $post->ID;
+					$order    = wc_get_order( $order_id );
+				}
+				if ( ! empty( $order ) ) {
+					$transaction_id = Bambora_Online_Classic_Helper::get_bambora_online_classic_transaction_id( $order );
+					if ( strlen( $transaction_id ) > 0 ) {
+						$html = $this->bambora_online_classic_meta_box_payment_html( $order, $transaction_id );
+					} else {
+						$html = sprintf( __( 'No transaction was found for order %s', 'bambora-online-classic' ), $order_id );
+						$this->_boclassic_log->add( $html );
+					}
+				} else {
+					$html = sprintf( __( 'The order with id %s could not be loaded', 'bambora-online-classic' ), $order_id );
+					$this->_boclassic_log->add( $html );
+				}
+			} catch ( Exception $ex ) {
+				$html = $ex->getMessage();
+				$this->_boclassic_log->add( $html );
+			}
+			echo ent2ncr( $html );
+		}
 
-                }
+		/**
+		 * Create the HTML for the Bambora Online Classic Meta box payment field
+		 *
+		 * @param WC_Order $order
+		 * @param string $transaction_id
+		 *
+		 * @return string
+		 */
+		protected function bambora_online_classic_meta_box_payment_html( $order, $transaction_id ) {
+			try {
+				$html = '';
+				if ( class_exists( 'sitepress' ) ) {
+					$merchant_number = Bambora_Online_Classic_Helper::getWPMLOptionValue( "merchant", $this->merchant );
+					$remote_password = Bambora_Online_Classic_Helper::getWPMLOptionValue( "remotepassword", $this->remotepassword );
+				} else {
+					$merchant_number = $this->merchant;
+					$remote_password = $this->remotepassword;
+				}
 
-                $history_array = $transaction->history->TransactionHistoryInfo;
+				$webservice               = new Bambora_Online_Classic_Soap( $remote_password );
+				$get_transaction_response = $webservice->get_transaction( $merchant_number, $transaction_id );
+				if ( $get_transaction_response->gettransactionResult === false ) {
+					$html = __( 'Get Transaction action failed', 'bambora-online-classic' );
+					if ( $get_transaction_response->epayresponse != '-1' ) {
+						$html .= ' - ' . $webservice->get_epay_error( $merchant_number, $get_transaction_response->epayresponse );
+					}
 
-                if ( isset($history_array) && !is_array($history_array) ) {
-                    $history_array = array( $history_array);
-                }
+					return $html;
+				}
+				$transaction   = $get_transaction_response->transactionInformation;
+				$currency_code = $transaction->currency;
+				$currency      = Bambora_Online_Classic_Helper::get_iso_code( $currency_code, false );
+				$minorunits    = Bambora_Online_Classic_Helper::get_currency_minorunits( $currency );
 
-                // Sort the history array based on when the history event is created
-                $histrory_created = array();
-                foreach ( $history_array as $history ) {
-                    $histrory_created[] = $history->created;
-                }
-                array_multisort( $histrory_created, SORT_ASC, $history_array );
+				$total_authorized      = Bambora_Online_Classic_Helper::convert_price_from_minorunits( $transaction->authamount, $minorunits );
+				$total_captured        = Bambora_Online_Classic_Helper::convert_price_from_minorunits( $transaction->capturedamount, $minorunits );
+				$total_credited        = Bambora_Online_Classic_Helper::convert_price_from_minorunits( $transaction->creditedamount, $minorunits );
+				$available_for_capture = $total_authorized - $total_captured;
+				$transaction_status    = $transaction->status;
 
-                if ( count( $history_array ) > 0 ) {
-                    $html .= '<h4>' . __( 'TRANSACTION HISTORY', 'bambora-online-classic' ) . '</h4>';
-                    $html .= '<table class="boclassic-table">';
+				$card_info     = Bambora_Online_Classic_Helper::get_cardtype_groupid_and_name( $transaction->cardtypeid );
+				$card_group_id = $card_info[1];
+				$card_name     = $card_info[0];
 
-                    foreach ( $history_array as $history ) {
-                        $html .= '<tr class="boclassic-transaction-row-header">';
-                        $html .= '<td>' . Bambora_Online_Classic_Helper::format_date_time( $history->created ) . '</td>';
-                        $html .= '</tr>';
-                        if ( strlen( $history->username ) > 0 ) {
-                            $html .= '<tr class="boclassic-transaction-row-header boclassic-transaction-row-header-user">';
-                            $html .= '<td>' . sprintf( __( 'By: %s', 'bambora-online-classic' ), $history->username ) . '</td>';
-                            $html .= '</tr>';
-                        }
-                        $html .= '<tr class="boclassic-transaction">';
-                        $html .= '<td>' . $history->eventMsg . '</td>';
-                        $html .= '</tr>';
-                    }
-                    $html .= '</table>';
-                }
+				if ( isset( $card_group_id ) && $card_group_id != '-1' ) {
+					$this->add_or_update_payment_type_id_to_order( $order, $card_group_id );
+				}
 
-                return $html;
-            }
-            catch ( Exception $ex ) {
-                throw $ex;
-            }
-        }
+				$user = wp_get_current_user();
+				if ( in_array( $this->rolecapturerefunddelete, (array) $user->roles ) || in_array( 'administrator', (array) $user->roles ) ) {
+					//The user has the role required for  "Capture, Refund, Delete"  and can perform those actions.
+					$canCaptureRefundDelete = true;
+				} else {
+					//The user can only view the data.
+					$canCaptureRefundDelete = false;
+				}
 
-        /**
-         * Get the bambora online checkout logger
-         *
-         * @return Bambora_Online_Classic_Log
-         */
-        public function get_boclassic_logger() {
-            return $this->_boclassic_log;
-        }
+				$html = '<div class="boclassic-info">';
+				if ( isset( $card_group_id ) && $card_group_id != '-1' ) {
+					$html .= '<img class="boclassic-paymenttype-img" src="https://d25dqh6gpkyuw6.cloudfront.net/paymentlogos/external/' . $card_group_id . '.png" alt="' . $card_name . '" title="' . $card_name . '" />';
+				}
+				$html .= '<div class="boclassic-transactionid">';
+				$html .= '<p>' . __( 'Transaction ID', 'bambora-online-classic' ) . '</p>';
+				$html .= '<p>' . $transaction->transactionid . '</p>';
+				$html .= '</div>';
+				$html .= '<div class="boclassic-paymenttype">';
+				$html .= '<p>' . __( 'Payment Type', 'bambora-online-classic' ) . '</p>';
+				$html .= '<p>' . $card_name . '</p>';
+				$html .= '</div>';
 
-        public function module_check($order_id) {
-            $payment_method = get_post_meta( $order_id, '_payment_method', true );
-            return $this->id === $payment_method;
-        }
+				$html .= '<div class="boclassic-info-overview">';
+				$html .= '<p>' . __( 'Authorized:', 'bambora-online-classic' ) . '</p>';
+				$html .= '<p>' . wc_format_localized_price( $total_authorized ) . ' ' . $currency . '</p>';
+				$html .= '</div>';
+				$html .= '<div class="boclassic-info-overview">';
+				$html .= '<p>' . __( 'Captured:', 'bambora-online-classic' ) . '</p>';
+				$html .= '<p>' . wc_format_localized_price( $total_captured ) . ' ' . $currency . '</p>';
+				$html .= '</div>';
+				$html .= '<div class="boclassic-info-overview">';
+				$html .= '<p>' . __( 'Refunded:', 'bambora-online-classic' ) . '</p>';
+				$html .= '<p>' . wc_format_localized_price( $total_credited ) . ' ' . $currency . '</p>';
+				$html .= '</div>';
+				$html .= '</div>';
 
-        /**
-         * Returns a plugin URL path
-         *
-         * @param string $path
-         * @return string
-         */
-        public function plugin_url( $path ) {
-            return plugins_url( $path, __FILE__ );
-        }
+				if ( $transaction_status === 'PAYMENT_NEW' || ( $transaction_status === 'PAYMENT_CAPTURED' && $total_credited === 0 ) ) {
+					$html .= '<div class="boclassic-action-container">';
+					$html .= '<input type="hidden" id="boclassic-currency" name="boclassic-currency" value="' . $currency . '">';
+					wp_nonce_field( 'boclassic_process_payment_action', 'boclassicnonce' );
+					if ( $transaction_status === 'PAYMENT_NEW' ) {
+						$html .= '<input type="hidden" id="boclassic-capture-message" name="boclassic-capture-message" value="' . __( 'Are you sure you want to capture the payment?', 'bambora-online-classic' ) . '" />';
+						$html .= '<div class="boclassic-action">';
 
-	    public function get_icon() {
+						if ( $canCaptureRefundDelete ) {
+							$html .= '<p>' . $currency . '</p>';
+							$html .= '<input type="text" value="' . $available_for_capture . '" id="boclassic-capture-amount" class="boclassic-amount" name="boclassic-amount" />';
+							$html .= '<input id="boclassic-capture-submit" class="button capture" name="boclassic-capture" type="submit" value="' . __( 'Capture', 'bambora-online-classic' ) . '" />';
+						} else {
+							$html .= __( 'Your role cannot capture or delete the payment', 'bambora-online-classic' );
+						}
+						$html .= '</div>';
+						$html .= '<br />';
+						if ( $total_captured === 0 ) {
+							$html .= '<input type="hidden" id="boclassic-delete-message" name="boclassic-delete-message" value="' . __( 'Are you sure you want to delete the payment?', 'bambora-online-classic' ) . '" />';
+							$html .= '<div class="boclassic-action">';
+							if ( $canCaptureRefundDelete ) {
+								$html .= '<input id="boclassic-delete-submit" class="button delete" name="boclassic-delete" type="submit" value="' . __( 'Delete', 'bambora-online-classic' ) . '" />';
+							}
+							$html .= '</div>';
+						}
+					} elseif ( $transaction_status === 'PAYMENT_CAPTURED' && $total_credited === 0 ) {
+						$html .= '<input type="hidden" id="boclassic-refund-message" name="boclassic-refund-message" value="' . __( 'Are you sure you want to refund the payment?', 'bambora-online-classic' ) . '" />';
+						$html .= '<div class="boclassic-action">';
+						$html .= '<p>' . $currency . '</p>';
+						$html .= '<input type="text" value="' . $total_captured . '" id="boclassic-refund-amount" class="boclassic-amount" name="boclassic-amount" />';
+						if ( $canCaptureRefundDelete ) {
+							$html .= '<input id="boclassic-refund-submit" class="button refund" name="boclassic-refund" type="submit" value="' . __( 'Refund', 'bambora-online-classic' ) . '" />';
+						}
+						$html .= '</div>';
+						$html .= '<br />';
+					}
+					$html            .= '</div>';
+					$warning_message = __( 'The amount you entered was in the wrong format.', 'bambora-online-classic' );
 
-		    $icon_html = '<img src="'. $this->icon.'" alt="'.$this->method_title.'" width="50"  />';
+					$html .= '<div id="boclassic-format-error" class="boclassic boclassic-error"><strong>' . __( 'Warning', 'bambora-online-classic' ) . ' </strong>' . $warning_message . '<br /><strong>' . __( 'Correct format is: 1234.56', 'bambora-online-classic' ) . '</strong></div>';
 
-		    return apply_filters( 'woocommerce_gateway_icon', $icon_html, $this->id  );
-	    }
-    }
+				}
 
-    add_filter( 'woocommerce_payment_gateways', 'add_bambora_online_classic_woocommerce' );
-    Bambora_Online_Classic::get_instance()->init_hooks();
+				$history_array = $transaction->history->TransactionHistoryInfo;
 
-    /**
-     * Add the Gateway to WooCommerce
-     **/
-    function add_bambora_online_classic_woocommerce( $methods ) {
-        $methods[] = 'Bambora_Online_Classic';
-        return $methods;
-    }
+				if ( isset( $history_array ) && ! is_array( $history_array ) ) {
+					$history_array = array( $history_array );
+				}
 
-    $plugin_dir = basename( dirname( __FILE__ ) );
-    load_plugin_textdomain( 'bambora-online-classic', false, $plugin_dir . '/languages' );
+				// Sort the history array based on when the history event is created
+				$history_created = array();
+				foreach ( $history_array as $history ) {
+					$history_created[] = $history->created;
+				}
+				array_multisort( $history_created, SORT_ASC, $history_array );
 
-    add_action( 'before_woocommerce_init', function () {
-        if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, false );
-        }
-    } );
+				if ( count( $history_array ) > 0 ) {
+					$html .= '<h4>' . __( 'TRANSACTION HISTORY', 'bambora-online-classic' ) . '</h4>';
+					$html .= '<table class="boclassic-table">';
+
+					foreach ( $history_array as $history ) {
+						$html .= '<tr class="boclassic-transaction-row-header">';
+						$html .= '<td>' . Bambora_Online_Classic_Helper::format_date_time( $history->created ) . '</td>';
+						$html .= '</tr>';
+						if ( strlen( $history->username ) > 0 ) {
+							$html .= '<tr class="boclassic-transaction-row-header boclassic-transaction-row-header-user">';
+							$html .= '<td>' . sprintf( __( 'By: %s', 'bambora-online-classic' ), $history->username ) . '</td>';
+							$html .= '</tr>';
+						}
+						$html .= '<tr class="boclassic-transaction">';
+						$html .= '<td>' . $history->eventMsg . '</td>';
+						$html .= '</tr>';
+					}
+					$html .= '</table>';
+				}
+
+				return $html;
+			} catch ( Exception $ex ) {
+				throw $ex;
+			}
+		}
+
+		/**
+		 * Get the bambora online checkout logger
+		 *
+		 * @return Bambora_Online_Classic_Log
+		 */
+		public function get_boclassic_logger() {
+			return $this->_boclassic_log;
+		}
+
+		public function module_check( $order_id ) {
+			$order          = wc_get_order( $order_id );
+			$payment_method = $order->get_meta( '_payment_method', true );
+
+			return $this->id === $payment_method;
+		}
+
+		/**
+		 * Returns a plugin URL path
+		 *
+		 * @param string $path
+		 *
+		 * @return string
+		 */
+		public function plugin_url( $path ) {
+			return plugins_url( $path, __FILE__ );
+		}
+
+		public function get_icon() {
+
+			$icon_html = '<img src="' . $this->icon . '" alt="' . $this->method_title . '" width="50"  />';
+
+			return apply_filters( 'woocommerce_gateway_icon', $icon_html, $this->id );
+		}
+	}
+
+	add_filter( 'woocommerce_payment_gateways', 'add_bambora_online_classic_woocommerce' );
+	Bambora_Online_Classic::get_instance()->init_hooks();
+
+	/**
+	 * Add the Gateway to WooCommerce
+	 **/
+	function add_bambora_online_classic_woocommerce( $methods ) {
+		$methods[] = 'Bambora_Online_Classic';
+
+		return $methods;
+	}
+
+	$plugin_dir = basename( dirname( __FILE__ ) );
+	load_plugin_textdomain( 'bambora-online-classic', false, $plugin_dir . '/languages' );
+
+	add_action( 'before_woocommerce_init', function () {
+		if ( class_exists( FeaturesUtil::class ) ) {
+			FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+		}
+	} );
 
 }
