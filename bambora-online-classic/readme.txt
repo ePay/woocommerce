@@ -7,7 +7,7 @@ Stable tag: 5.5.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 WC requires at least: 3.2
-WC tested up to: 8.0
+WC tested up to: 8.2
 
 Integrates Bambora ePay payment gateway into your WooCommerce installation.
 
@@ -52,6 +52,11 @@ With Bambora ePay for WooCommerce, you are able to integrate the Bambora Online 
 <a href="https://woocommerce.wpguiden.dk/en/configuration">Click here for more information about **Settings**</a>
 
 == Changelog ==
+
+= 6.0.0 =
+* Support for WooCommerce HPOS (High Performance Order Storage) and WooCommerce 8.2.
+* Before upgrading to HPOS, please make sure to make a database backup. HPOS stores the orders in new database tables. Recommending compatibility mode to start with.
+
 
 = 5.5.2 =
 * Declare that this module is not yet compatible with WooCommerce HPOS
